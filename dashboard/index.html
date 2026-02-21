@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header span { font-size: 1.5rem; }
+
+    main {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #1a1a2e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    label:first-of-type { margin-top: 0; }
+
+    input, select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #fafafa;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #6366f1; background: white; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    button.primary {
+      margin-top: 20px;
+      width: 100%;
+      padding: 11px;
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    button.primary:hover { background: #4f46e5; }
+    button.primary:active { transform: scale(0.98); }
+    button.primary:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    /* QR Display */
+    #qr-section { display: none; margin-top: 24px; text-align: center; border-top: 1px solid #f0f2f5; padding-top: 20px; }
+    #qr-section img { width: 200px; height: 200px; border-radius: 8px; border: 2px solid #e5e7eb; }
+    #qr-section .session-meta { font-size: 0.82rem; color: #6b7280; margin-top: 8px; }
+    
+    #countdown {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+    #countdown.expired { background: #fee2e2; color: #991b1b; }
+
+    /* Attendance Table */
+    .attendance-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .attendance-header h2 { margin: 0; }
+    
+    #count-badge {
+      background: #6366f1;
+      color: white;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    #status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #9ca3af;
+      margin-right: 4px;
+    }
+    #status-dot.active { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    thead th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      border-bottom: 2px solid #f0f2f5;
+    }
+    tbody tr {
+      border-bottom: 1px solid #f9fafb;
+      transition: background 0.1s;
+    }
+    tbody tr:hover { background: #f9fafb; }
+    tbody td {
+      padding: 10px 12px;
+      vertical-align: middle;
+    }
+    .distance-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #d1fae5;
+      color: #065f46;
+    }
+    #empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: #9ca3af;
+    }
+    #empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+    #error-msg {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>🎓</span>
+  <h1>Attendance System — Professor Dashboard</h1>
+</header>
+
+<main>
+  <!-- LEFT: Create Session -->
+  <div class="card">
+    <h2>📋 Create Session</h2>
+
+    <label>Course Name</label>
+    <input id="course_name" type="text" placeholder="e.g. Data Structures — CS202" />
+
+    <label>Professor Name</label>
+    <input id="professor_name" type="text" placeholder="e.g. Dr. Karimov" />
+
+    <label>Classroom Location</label>
+    <div class="row-2">
+      <input id="lat" type="number" step="0.000001" placeholder="Latitude" />
+      <input id="lng" type="number" step="0.000001" placeholder="Longitude" />
+    </div>
+    <button onclick="useMyLocation()" style="width:100%;margin-top:8px;padding:7px;background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:0.85rem;">
+      📍 Use my current location
+    </button>
+
+    <div class="row-2">
+      <div>
+        <label>Radius (meters)</label>
+        <input id="radius" type="number" value="100" min="20" max="500" />
+      </div>
+      <div>
+        <label>QR Valid (seconds)</label>
+        <input id="validity" type="number" value="90" min="30" max="600" />
+      </div>
+    </div>
+
+    <label>Professor Secret</label>
+    <input id="secret" type="password" placeholder="Your access password" />
+
+    <div id="error-msg"></div>
+    <button class="primary" onclick="createSession()">⚡ Generate QR Code</button>
+
+    <!-- QR Output -->
+    <div id="qr-section">
+      <img id="qr-img" src="" alt="QR Code" />
+      <div class="session-meta" id="session-meta"></div>
+      <div id="countdown">⏱ --s remaining</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Live Attendance -->
+  <div class="card">
+    <div class="attendance-header">
+      <h2><span id="status-dot"></span> Live Attendance</h2>
+      <span id="count-badge">0 students</span>
+    </div>
+
+    <div id="attendance-body">
+      <div id="empty-state">
+        <div class="icon">📭</div>
+        <div>Generate a QR code to start taking attendance</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = "";  // Same origin — served from FastAPI
+  let pollInterval = null;
+  let countdownInterval = null;
+  let currentSessionId = null;
+  let currentSecret = null;
+  let expiresAt = null;
+
+  function showError(msg) {
+    const el = document.getElementById("error-msg");
+    el.textContent = msg;
+    el.style.display = "block";
+  }
+  function clearError() {
+    document.getElementById("error-msg").style.display = "none";
+  }
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        document.getElementById("lat").value = pos.coords.latitude.toFixed(6);
+        document.getElementById("lng").value = pos.coords.longitude.toFixed(6);
+      },
+      () => alert("Could not retrieve your location.")
+    );
+  }
+
+  async function createSession() {
+    clearError();
+    const payload = {
+      course_name: document.getElementById("course_name").value.trim(),
+      professor_name: document.getElementById("professor_name").value.trim(),
+      lat: parseFloat(document.getElementById("lat").value),
+      lng: parseFloat(document.getElementById("lng").value),
+      radius_meters: parseInt(document.getElementById("radius").value),
+      validity_seconds: parseInt(document.getElementById("validity").value),
+      secret: document.getElementById("secret").value,
+    };
+
+    if (!payload.course_name || !payload.professor_name) {
+      showError("Please fill in course name and professor name."); return;
+    }
+    if (isNaN(payload.lat) || isNaN(payload.lng)) {
+      showError("Please enter valid coordinates."); return;
+    }
+    if (!payload.secret) {
+      showError("Please enter the professor secret."); return;
+    }
+
+    const btn = document.querySelector("button.primary");
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+
+    try {
+      const res = await fetch(`${API}/api/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        showError(err.detail || "Server error."); return;
+      }
+      const data = await res.json();
+      startSession(data, payload.secret);
+    } catch (e) {
+      showError("Could not reach the server. Is it running?");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "⚡ Generate QR Code";
+    }
+  }
+
+  function startSession(data, secret) {
+    currentSessionId = data.session_id;
+    currentSecret = secret;
+    expiresAt = new Date(data.expires_at);
+
+    // Show QR
+    document.getElementById("qr-img").src = `data:image/png;base64,${data.qr_image_base64}`;
+    document.getElementById("session-meta").textContent =
+      `${data.course_name} · Session ID: ${data.session_id.substring(0, 8)}...`;
+    document.getElementById("qr-section").style.display = "block";
+
+    // Start countdown
+    if (countdownInterval) clearInterval(countdownInterval);
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+
+    // Start polling attendance
+    if (pollInterval) clearInterval(pollInterval);
+    pollAttendance();
+    pollInterval = setInterval(pollAttendance, 3000);
+  }
+
+  function updateCountdown() {
+    const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+    const el = document.getElementById("countdown");
+    el.textContent = `⏱ ${remaining}s remaining`;
+    if (remaining === 0) {
+      el.textContent = "⏰ QR Code expired";
+      el.classList.add("expired");
+      clearInterval(countdownInterval);
+    } else {
+      el.classList.remove("expired");
+    }
+  }
+
+  async function pollAttendance() {
+    if (!currentSessionId) return;
+    try {
+      const res = await fetch(
+        `${API}/api/sessions/${currentSessionId}/attendance?secret=${encodeURIComponent(currentSecret)}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      renderAttendance(data);
+
+      // Stop polling when session expires
+      if (!data.is_active) clearInterval(pollInterval);
+    } catch (e) {
+      console.error("Poll error:", e);
+    }
+  }
+
+  function renderAttendance(data) {
+    const badge = document.getElementById("count-badge");
+    const dot = document.getElementById("status-dot");
+    const body = document.getElementById("attendance-body");
+
+    badge.textContent = `${data.total_count} student${data.total_count !== 1 ? "s" : ""}`;
+    dot.className = data.is_active ? "active" : "";
+
+    if (data.records.length === 0) {
+      body.innerHTML = `<div id="empty-state"><div class="icon">⏳</div><div>Waiting for students to scan...</div></div>`;
+      return;
+    }
+
+    const rows = data.records.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.full_name}</strong></td>
+        <td><code>${r.student_id}</code></td>
+        <td>${r.telegram_username ? "@" + r.telegram_username : "—"}</td>
+        <td><span class="distance-badge">${r.distance_meters}m</span></td>
+        <td>${new Date(r.submitted_at).toLocaleTimeString()}</td>
+      </tr>
+    `).join("");
+
+    body.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Student ID</th>
+            <th>Telegram</th>
+            <th>Distance</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+</script>
+</body>
+</html>
