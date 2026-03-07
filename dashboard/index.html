@@ -6,294 +6,355 @@
   <title>Attendance Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #1a1a2e;
-      color: white;
-      padding: 18px 32px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+    header { background: #1a1a2e; color: white; padding: 18px 32px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
     header h1 { font-size: 1.25rem; font-weight: 600; }
-    header span { font-size: 1.5rem; }
-
-    main {
-      max-width: 1100px;
-      margin: 32px auto;
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-
-    .card h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 20px;
-      color: #1a1a2e;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #6b7280;
-      margin-bottom: 6px;
-      margin-top: 14px;
-    }
+    nav { background: white; border-bottom: 1px solid #e5e7eb; display: flex; }
+    nav button { padding: 14px 24px; border: none; background: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: #6b7280; border-bottom: 3px solid transparent; transition: all 0.15s; }
+    nav button.active { color: #6366f1; border-bottom-color: #6366f1; }
+    nav button:hover { color: #6366f1; }
+    .page { display: none; max-width: 1200px; margin: 28px auto; padding: 0 20px; }
+    .page.active { display: block; }
+    .live-grid { display: grid; grid-template-columns: 370px 1fr; gap: 24px; align-items: start; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 18px; color: #1a1a2e; }
+    label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 5px; margin-top: 12px; }
     label:first-of-type { margin-top: 0; }
-
-    input, select {
-      width: 100%;
-      padding: 9px 12px;
-      border: 1.5px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      background: #fafafa;
-      transition: border-color 0.15s;
-      outline: none;
-    }
-    input:focus, select:focus { border-color: #6366f1; background: white; }
-
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    button.primary {
-      margin-top: 20px;
-      width: 100%;
-      padding: 11px;
-      background: #6366f1;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-    }
+    input { width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 0.9rem; background: #fafafa; transition: border-color 0.15s; outline: none; }
+    input:focus { border-color: #6366f1; background: white; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button.primary { margin-top: 16px; width: 100%; padding: 11px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
     button.primary:hover { background: #4f46e5; }
-    button.primary:active { transform: scale(0.98); }
     button.primary:disabled { background: #a5b4fc; cursor: not-allowed; }
-
-    /* QR Display */
-    #qr-section { display: none; margin-top: 24px; text-align: center; border-top: 1px solid #f0f2f5; padding-top: 20px; }
-    #qr-section img { width: 200px; height: 200px; border-radius: 8px; border: 2px solid #e5e7eb; }
-    #qr-section .session-meta { font-size: 0.82rem; color: #6b7280; margin-top: 8px; }
-    
-    #countdown {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #fef3c7;
-      color: #92400e;
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      margin-top: 10px;
-    }
+    button.secondary { padding: 7px 14px; background: #f3f4f6; border: 1.5px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: #374151; }
+    button.secondary:hover { background: #e5e7eb; }
+    button.success { padding: 8px 14px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; width: 100%; margin-top: 8px; }
+    #qr-section { display: none; margin-top: 20px; text-align: center; border-top: 1px solid #f0f2f5; padding-top: 18px; }
+    #qr-section img { width: 280px; height: 280px; border-radius: 8px; border: 2px solid #e5e7eb; cursor: pointer; transition: transform 0.15s; }
+    #qr-section img:hover { transform: scale(1.02); }
+    #qr-fullscreen { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:20px; cursor:pointer; }
+    #qr-fullscreen img { width: min(90vw, 90vh); height: min(90vw, 90vh); border-radius: 12px; }
+    #qr-fullscreen .qr-meta { color:white; font-size:1.2rem; font-weight:600; text-align:center; }
+    #qr-fullscreen .qr-countdown { color:#a5b4fc; font-size:1rem; }
+    #qr-fullscreen .close-hint { color:rgba(255,255,255,0.4); font-size:0.85rem; margin-top:8px; }
+    #countdown { display: inline-flex; align-items: center; background: #fef3c7; color: #92400e; border-radius: 20px; padding: 4px 12px; font-size: 0.82rem; font-weight: 700; margin-top: 8px; }
     #countdown.expired { background: #fee2e2; color: #991b1b; }
-
-    /* Attendance Table */
-    .attendance-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
+    #live-rate-bar.good  { background: #10b981; }
+    #live-rate-bar.warn  { background: #f59e0b; }
+    #live-rate-bar.low   { background: #ef4444; }
+    #live-rate-label.good { color: #10b981; }
+    #live-rate-label.warn { color: #f59e0b; }
+    #live-rate-label.low  { color: #ef4444; }
+    .attendance-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
     .attendance-header h2 { margin: 0; }
-    
-    #count-badge {
-      background: #6366f1;
-      color: white;
-      border-radius: 20px;
-      padding: 3px 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
-    }
-
-    #status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #9ca3af;
-      margin-right: 4px;
-    }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    #count-badge { background: #6366f1; color: white; border-radius: 20px; padding: 3px 12px; font-size: 0.82rem; font-weight: 700; }
+    #status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; margin-right: 4px; }
     #status-dot.active { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-    thead th {
-      text-align: left;
-      padding: 8px 12px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #6b7280;
-      border-bottom: 2px solid #f0f2f5;
-    }
-    tbody tr {
-      border-bottom: 1px solid #f9fafb;
-      transition: background 0.1s;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th { text-align: left; padding: 8px 12px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; border-bottom: 2px solid #f0f2f5; }
+    tbody tr { border-bottom: 1px solid #f9fafb; }
     tbody tr:hover { background: #f9fafb; }
-    tbody td {
-      padding: 10px 12px;
-      vertical-align: middle;
-    }
-    .distance-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      background: #d1fae5;
-      color: #065f46;
-    }
-    #empty-state {
-      text-align: center;
-      padding: 48px 0;
-      color: #9ca3af;
-    }
+    tbody td { padding: 9px 12px; vertical-align: middle; }
+    .badge-qr { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+    .badge-manual { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+    .distance-badge { background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+    #empty-state { text-align: center; padding: 48px 0; color: #9ca3af; }
     #empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
-
-    #error-msg {
-      display: none;
-      margin-top: 10px;
-      padding: 10px 14px;
-      background: #fee2e2;
-      color: #991b1b;
-      border-radius: 8px;
-      font-size: 0.85rem;
-    }
-
-    @media (max-width: 768px) {
-      main { grid-template-columns: 1fr; }
-    }
+    #manual-section { margin-top: 20px; border-top: 1px solid #f0f2f5; padding-top: 18px; display: none; }
+    #manual-section h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+    #manual-section p { font-size: 0.8rem; color: #6b7280; margin-bottom: 10px; }
+    #search-results { margin-top: 6px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; display: none; }
+    .search-result-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f0f2f5; font-size: 0.875rem; }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: #f3f4f6; }
+    .search-result-item .sid { font-size: 0.75rem; color: #6b7280; }
+    #selected-student { display: none; margin-top: 10px; padding: 12px; background: #f9fafb; border-radius: 8px; font-size: 0.875rem; }
+    #manual-feedback { margin-top: 8px; font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; display: none; }
+    #manual-feedback.ok { background: #d1fae5; color: #065f46; }
+    #manual-feedback.err { background: #fee2e2; color: #991b1b; }
+    #error-msg { display: none; margin-top: 10px; padding: 10px 14px; background: #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.85rem; }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .history-header h2 { font-size: 1.1rem; font-weight: 600; }
+    #history-secret-row { display: flex; gap: 10px; margin-bottom: 20px; }
+    #history-secret-row input { max-width: 260px; margin: 0; }
+    #history-secret-row button { margin: 0; width: auto; padding: 9px 20px; }
+    .session-card { background: white; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .session-card .info h3 { font-size: 0.95rem; font-weight: 600; }
+    .session-card .info p { font-size: 0.8rem; color: #6b7280; margin-top: 3px; }
+    .session-card .actions { display: flex; gap: 8px; align-items: center; }
+    .session-count { background: #ede9fe; color: #5b21b6; border-radius: 20px; padding: 3px 12px; font-size: 0.8rem; font-weight: 700; }
+    @media (max-width: 768px) { .live-grid { grid-template-columns: 1fr; } }
   </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
+
+<!-- QR FULLSCREEN OVERLAY -->
+<div id="qr-fullscreen" onclick="closeFullscreen()">
+  <img id="qr-fullscreen-img" src="" alt="QR Code" />
+  <div class="qr-meta" id="qr-fullscreen-meta"></div>
+  <div class="qr-countdown" id="qr-fullscreen-countdown"></div>
+  <div class="close-hint">Click anywhere to close</div>
+</div>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed;inset:0;background:#f0f2f5;display:flex;align-items:center;justify-content:center;z-index:1000;">
+  <div style="background:white;border-radius:16px;padding:40px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.10);text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:8px;">🎓</div>
+    <h1 style="font-size:1.3rem;font-weight:700;margin-bottom:4px;">Professor Dashboard</h1>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:28px;">Attendance Management System</p>
+    <input id="login-username" type="text" placeholder="Username"
+      style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.95rem;outline:none;margin-bottom:10px;" />
+    <input id="login-password" type="password" placeholder="Password"
+      style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.95rem;outline:none;margin-bottom:12px;"
+      onkeydown="if(event.key==='Enter') doLogin()" />
+    <div id="login-error" style="display:none;color:#991b1b;font-size:0.82rem;margin-bottom:10px;background:#fee2e2;padding:8px 12px;border-radius:8px;"></div>
+    <button id="login-btn" onclick="doLogin()" style="width:100%;padding:11px;background:#6366f1;color:white;border:none;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;">
+      Sign In
+    </button>
+    <div style="margin-top:16px;font-size:0.8rem;color:#9ca3af;">
+      Students use the Telegram bot · <a href="/admin" style="color:#6366f1;text-decoration:none;">Admin Portal →</a>
+    </div>
+  </div>
+</div>
 
 <header>
   <span>🎓</span>
   <h1>Attendance System — Professor Dashboard</h1>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+    <span id="logged-in-label" style="font-size:0.82rem;opacity:0.7;"></span>
+    <button onclick="doLogout()" style="padding:5px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;cursor:pointer;font-size:0.82rem;">Sign Out</button>
+  </div>
 </header>
 
-<main>
-  <!-- LEFT: Create Session -->
-  <div class="card">
-    <h2>📋 Create Session</h2>
+<nav>
+  <button class="active" id="nav-live" onclick="showPage('live', this)">⚡ Live Session</button>
+  <button id="nav-history" onclick="showPage('history', this)">📋 Session History</button>
+  <button id="nav-summary" onclick="showPage('summary', this)">📊 Course Summary</button>
+</nav>
 
-    <label>Course Name</label>
-    <input id="course_name" type="text" placeholder="e.g. Data Structures — CS202" />
-
-    <label>Professor Name</label>
-    <input id="professor_name" type="text" placeholder="e.g. Dr. Karimov" />
-
-    <label>Classroom Location</label>
-    <div class="row-2">
-      <input id="lat" type="number" step="0.000001" placeholder="Latitude" />
-      <input id="lng" type="number" step="0.000001" placeholder="Longitude" />
-    </div>
-    <button onclick="useMyLocation()" style="width:100%;margin-top:8px;padding:7px;background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:0.85rem;">
-      📍 Use my current location
-    </button>
-
-    <div class="row-2">
-      <div>
-        <label>Radius (meters)</label>
-        <input id="radius" type="number" value="100" min="20" max="500" />
+<!-- LIVE PAGE -->
+<div class="page active" id="page-live">
+  <div class="live-grid">
+    <div class="card">
+      <h2>📋 Create Session</h2>
+      <label>Course Name</label>
+      <input id="course_name" type="text" placeholder="e.g. Data Structures CS202" />
+      <label>Group / Class</label>
+      <select id="group_name" onchange="onGroupSelect()"
+        style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;background:white;">
+        <option value="">-- Select group --</option>
+      </select>
+      <label>Professor Name</label>
+      <input id="professor_name" type="text" placeholder="e.g. Dr. Karimov" readonly
+        style="background:#f9fafb;color:#6b7280;cursor:not-allowed;" title="Professor name is set from your login" />
+      <label>Classroom Location</label>
+      <select id="location-select" onchange="fillSavedLocation()" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;background:white;margin-bottom:8px;">
+        <option value="">— or pick a saved location —</option>
+      </select>
+      <div class="row-2">
+        <input id="lat" type="number" step="any" placeholder="Latitude" />
+        <input id="lng" type="number" step="any" placeholder="Longitude" />
       </div>
-      <div>
-        <label>QR Valid (seconds)</label>
-        <input id="validity" type="number" value="90" min="30" max="600" />
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="secondary" style="flex:1;" onclick="useMyLocation()">📍 Use my location</button>
+        <button class="secondary" style="flex:1;" onclick="showSaveLocation()">💾 Save this location</button>
+      </div>
+      <div id="save-location-form" style="display:none;margin-top:10px;padding:12px;background:#f9fafb;border-radius:8px;">
+        <label style="margin-top:0;">Location Name</label>
+        <input id="location-name" type="text" placeholder="e.g. Room 201, Main Hall" />
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="success" style="flex:1;padding:8px;" onclick="saveLocation()">Save</button>
+          <button class="secondary" style="flex:1;" onclick="hideSaveLocation()">Cancel</button>
+        </div>
+      </div>
+      <div class="row-2">
+        <div><label>Radius (meters)</label><input id="radius" type="number" value="100" min="20" max="500" /></div>
+        <div><label>QR Valid (seconds)</label><input id="validity" type="number" value="90" min="30" max="600" /></div>
+      </div>
+      <label>Total Students Enrolled <span style="font-size:0.72rem;color:#9ca3af;">(auto-filled from group)</span></label>
+      <input id="total_enrolled" type="number" value="0" min="0" readonly
+        style="background:#f9fafb;color:#6b7280;" placeholder="Select a group above" />
+      <label>Professor Secret</label>
+      <input id="secret" type="password" placeholder="Your access password" />
+      <div id="error-msg"></div>
+      <button class="primary" onclick="createSession()">⚡ Generate QR Code</button>
+
+      <div id="qr-section">
+        <img id="qr-img" src="" alt="QR Code" onclick="openFullscreen()" title="Click to fullscreen" />
+        <p style="font-size:0.75rem;color:#9ca3af;margin-top:6px;">🖱 Click QR to fullscreen for backbenchers</p>
+        <div style="font-size:0.8rem;color:#6b7280;margin-top:6px;" id="session-meta"></div>
+        <div id="countdown">⏱ --s remaining</div>
+        <div id="live-rate-box" style="display:none;margin-top:14px;width:280px;margin-left:auto;margin-right:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <span style="font-size:0.78rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Live Attendance Rate</span>
+            <span id="live-rate-label" style="font-size:1rem;font-weight:800;color:#6366f1;">— %</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:99px;height:10px;overflow:hidden;">
+            <div id="live-rate-bar" style="height:100%;width:0%;border-radius:99px;background:#6366f1;transition:width 0.5s ease,background 0.5s ease;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:5px;">
+            <span id="live-rate-count" style="font-size:0.75rem;color:#6b7280;">0 present</span>
+            <span id="live-rate-enrolled" style="font-size:0.75rem;color:#9ca3af;">of — enrolled</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="manual-section">
+        <h3>✍️ Manual Override</h3>
+        <p>For students with dead phones or no GPS</p>
+        <input id="manual-search" type="text" placeholder="Search by name or student ID..." oninput="searchStudents()" />
+        <div id="search-results"></div>
+        <div id="selected-student">
+          <strong id="selected-name"></strong> — <span id="selected-sid" style="color:#6b7280;"></span>
+          <input id="manual-note" type="text" placeholder="Note (e.g. phone dead)" style="margin-top:8px;" />
+          <button class="success" onclick="submitManual()">✅ Mark Present</button>
+        </div>
+        <div id="manual-feedback"></div>
       </div>
     </div>
 
-    <label>Professor Secret</label>
-    <input id="secret" type="password" placeholder="Your access password" />
-
-    <div id="error-msg"></div>
-    <button class="primary" onclick="createSession()">⚡ Generate QR Code</button>
-
-    <!-- QR Output -->
-    <div id="qr-section">
-      <img id="qr-img" src="" alt="QR Code" />
-      <div class="session-meta" id="session-meta"></div>
-      <div id="countdown">⏱ --s remaining</div>
+    <div class="card">
+      <div class="attendance-header">
+        <h2><span id="status-dot"></span> Live Attendance</h2>
+        <div class="header-actions">
+          <span id="count-badge">0 students</span>
+          <button class="secondary" id="btn-csv" onclick="exportCSV()" style="display:none;">⬇ CSV</button>
+          <button class="secondary" id="btn-sort" onclick="exportPDFSorted()" style="display:none;">🔤 PDF A-Z</button>
+          <button class="secondary" id="btn-pdf" onclick="exportPDF()" style="display:none;">🖨 PDF</button>
+          <button class="secondary" id="btn-clear" onclick="clearSession()" style="display:none;color:#ef4444;border-color:#fca5a5;">✕ Clear</button>
+        </div>
+      </div>
+      <div id="attendance-body">
+        <div id="empty-state">
+          <div class="icon">📭</div>
+          <div>Generate a QR code to start taking attendance</div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- RIGHT: Live Attendance -->
-  <div class="card">
-    <div class="attendance-header">
-      <h2><span id="status-dot"></span> Live Attendance</h2>
-      <span id="count-badge">0 students</span>
-    </div>
-
-    <div id="attendance-body">
-      <div id="empty-state">
-        <div class="icon">📭</div>
-        <div>Generate a QR code to start taking attendance</div>
-      </div>
-    </div>
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div class="history-header"><h2>📋 Session History</h2></div>
+  <div id="history-secret-row">
+    <input id="history-secret" type="password" placeholder="Professor secret" />
+    <button class="primary" onclick="loadHistory()">Load History</button>
   </div>
-</main>
+  <div id="history-list"></div>
+</div>
 
 <script>
-  const API = "";  // Same origin — served from FastAPI
-  let pollInterval = null;
-  let countdownInterval = null;
-  let currentSessionId = null;
-  let currentSecret = null;
-  let expiresAt = null;
+  const API = "";
+  let pollInterval = null, countdownInterval = null;
+  let selectedStudentId = null;
 
-  function showError(msg) {
-    const el = document.getElementById("error-msg");
-    el.textContent = msg;
-    el.style.display = "block";
+  // Persist session state across refreshes
+  let currentSessionId = localStorage.getItem("sessionId") || null;
+  let currentSecret = localStorage.getItem("secret") || null;
+  let expiresAt = localStorage.getItem("expiresAt") ? new Date(localStorage.getItem("expiresAt")) : null;
+
+  // ── Login / Auth ────────────────────────────────────────────────────────────
+  let currentProfessor = null;
+
+  function checkLogin() {
+    const saved = sessionStorage.getItem("prof_data");
+    if (saved) {
+      currentProfessor = JSON.parse(saved);
+      document.getElementById("login-overlay").style.display = "none";
+      applyProfessorSession();
+    }
   }
-  function clearError() {
-    document.getElementById("error-msg").style.display = "none";
+
+  function applyProfessorSession() {
+    if (!currentProfessor) return;
+    // Use professor credentials as the session secret for API calls
+    const cred = currentProfessor.username + ":" + currentProfessor.password;
+    document.getElementById("secret").value = currentProfessor.password;
+    document.getElementById("history-secret").value = currentProfessor.password;
+    document.getElementById("summary-secret").value = currentProfessor.password;
+    document.getElementById("logged-in-label").textContent = currentProfessor.full_name;
+    // Always set professor name from login — cannot be manually changed
+    const profField = document.getElementById("professor_name");
+    if (profField) profField.value = currentProfessor.full_name;
+    loadSavedLocations();
+    loadGroupsDropdown();
+    restoreSession();
   }
+
+  async function doLogin() {
+    const username = document.getElementById("login-username").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+    if (!username || !password) return;
+    const errEl = document.getElementById("login-error");
+    const btn = document.getElementById("login-btn");
+    btn.textContent = "Signing in...";
+    btn.disabled = true;
+    errEl.style.display = "none";
+    try {
+      const res = await fetch(`/api/auth/professor/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        currentProfessor = { ...data, password };
+        sessionStorage.setItem("prof_data", JSON.stringify(currentProfessor));
+        document.getElementById("login-overlay").style.display = "none";
+        errEl.style.display = "none";
+        applyProfessorSession();
+      } else {
+        errEl.textContent = "❌ Incorrect username or password.";
+        errEl.style.display = "block";
+      }
+    } catch(e) {
+      errEl.textContent = "❌ Could not reach server.";
+      errEl.style.display = "block";
+    } finally {
+      btn.textContent = "Sign In";
+      btn.disabled = false;
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem("prof_data");
+    currentProfessor = null;
+    location.reload();
+  }
+
+  function showPage(name, btn) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.getElementById("page-" + name).classList.add("active");
+    btn.classList.add("active");
+  }
+
+  function showError(msg) { const el = document.getElementById("error-msg"); el.textContent = msg; el.style.display = "block"; }
+  function clearError() { document.getElementById("error-msg").style.display = "none"; }
 
   function useMyLocation() {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
-      return;
-    }
+    if (!navigator.geolocation) { alert("Geolocation not supported."); return; }
+    const btn = event.target;
+    btn.textContent = "⏳ Getting precise location...";
+    btn.disabled = true;
     navigator.geolocation.getCurrentPosition(
       pos => {
-        document.getElementById("lat").value = pos.coords.latitude.toFixed(6);
-        document.getElementById("lng").value = pos.coords.longitude.toFixed(6);
+        // Use full precision — no rounding
+        document.getElementById("lat").value = pos.coords.latitude;
+        document.getElementById("lng").value = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+        btn.textContent = `✅ Location set (±${Math.round(acc)}m accuracy)`;
+        btn.disabled = false;
       },
-      () => alert("Could not retrieve your location.")
+      (err) => {
+        btn.textContent = "📍 Use my current location";
+        btn.disabled = false;
+        alert("Could not get location: " + err.message);
+      },
+      {
+        enableHighAccuracy: true,   // Forces GPS instead of WiFi/cell tower
+        timeout: 15000,             // Wait up to 15 seconds for a good fix
+        maximumAge: 0               // Never use a cached position
+      }
     );
   }
 
@@ -301,140 +362,604 @@
     clearError();
     const payload = {
       course_name: document.getElementById("course_name").value.trim(),
+      group_name: document.getElementById("group_name").value.trim(),
       professor_name: document.getElementById("professor_name").value.trim(),
       lat: parseFloat(document.getElementById("lat").value),
       lng: parseFloat(document.getElementById("lng").value),
       radius_meters: parseInt(document.getElementById("radius").value),
       validity_seconds: parseInt(document.getElementById("validity").value),
+      total_enrolled: parseInt(document.getElementById("total_enrolled").value) || 0,
       secret: document.getElementById("secret").value,
     };
-
-    if (!payload.course_name || !payload.professor_name) {
-      showError("Please fill in course name and professor name."); return;
-    }
-    if (isNaN(payload.lat) || isNaN(payload.lng)) {
-      showError("Please enter valid coordinates."); return;
-    }
-    if (!payload.secret) {
-      showError("Please enter the professor secret."); return;
-    }
-
+    if (!payload.course_name || !payload.professor_name) { showError("Fill in course and professor name."); return; }
+    if (!payload.group_name) { showError("Please select a group."); return; }
+    if (isNaN(payload.lat) || isNaN(payload.lng)) { showError("Enter valid coordinates."); return; }
+    if (!payload.secret) { showError("Enter the professor secret."); return; }
     const btn = document.querySelector("button.primary");
-    btn.disabled = true;
-    btn.textContent = "Generating...";
-
+    btn.disabled = true; btn.textContent = "Generating...";
     try {
-      const res = await fetch(`${API}/api/sessions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        showError(err.detail || "Server error."); return;
-      }
-      const data = await res.json();
-      startSession(data, payload.secret);
-    } catch (e) {
-      showError("Could not reach the server. Is it running?");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "⚡ Generate QR Code";
-    }
+      const res = await fetch(`${API}/api/sessions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!res.ok) { const e = await res.json(); showError(e.detail || "Server error."); return; }
+      startSession(await res.json(), payload.secret);
+    } catch (e) { showError("Could not reach the server."); }
+    finally { btn.disabled = false; btn.textContent = "⚡ Generate QR Code"; }
   }
 
   function startSession(data, secret) {
-    currentSessionId = data.session_id;
-    currentSecret = secret;
-    expiresAt = new Date(data.expires_at);
-
-    // Show QR
+    currentSessionId = data.session_id; currentSecret = secret; expiresAt = new Date(data.expires_at);
+    localStorage.setItem("sessionId", data.session_id);
+    localStorage.setItem("secret", secret);
+    localStorage.setItem("expiresAt", data.expires_at);
+    localStorage.setItem("qrImage", data.qr_image_base64);
+    localStorage.setItem("sessionMeta", data.course_name + " — " + data.group_name + " · " + data.session_id.substring(0, 8) + "...");
+    localStorage.setItem("groupName", data.group_name);
     document.getElementById("qr-img").src = `data:image/png;base64,${data.qr_image_base64}`;
-    document.getElementById("session-meta").textContent =
-      `${data.course_name} · Session ID: ${data.session_id.substring(0, 8)}...`;
+    document.getElementById("session-meta").textContent = `${data.course_name} · ${data.session_id.substring(0, 8)}...`;
     document.getElementById("qr-section").style.display = "block";
-
-    // Start countdown
+    document.getElementById("manual-section").style.display = "block";
+    document.getElementById("btn-csv").style.display = "inline-block";
+    document.getElementById("btn-sort").style.display = "inline-block";
+    document.getElementById("btn-pdf").style.display = "inline-block";
+    document.getElementById("btn-clear").style.display = "inline-block";
     if (countdownInterval) clearInterval(countdownInterval);
-    updateCountdown();
-    countdownInterval = setInterval(updateCountdown, 1000);
-
-    // Start polling attendance
+    updateCountdown(); countdownInterval = setInterval(updateCountdown, 1000);
     if (pollInterval) clearInterval(pollInterval);
-    pollAttendance();
-    pollInterval = setInterval(pollAttendance, 3000);
+    pollAttendance(); pollInterval = setInterval(pollAttendance, 3000);
   }
 
   function updateCountdown() {
     const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
     const el = document.getElementById("countdown");
-    el.textContent = `⏱ ${remaining}s remaining`;
-    if (remaining === 0) {
-      el.textContent = "⏰ QR Code expired";
-      el.classList.add("expired");
-      clearInterval(countdownInterval);
-    } else {
-      el.classList.remove("expired");
-    }
+    if (remaining === 0) { el.textContent = "⏰ QR Code expired"; el.classList.add("expired"); clearInterval(countdownInterval); }
+    else { el.textContent = `⏱ ${remaining}s remaining`; el.classList.remove("expired"); }
   }
 
   async function pollAttendance() {
     if (!currentSessionId) return;
     try {
-      const res = await fetch(
-        `${API}/api/sessions/${currentSessionId}/attendance?secret=${encodeURIComponent(currentSecret)}`
-      );
+      const res = await fetch(`${API}/api/sessions/${currentSessionId}/attendance?secret=${encodeURIComponent(currentSecret)}`);
       if (!res.ok) return;
       const data = await res.json();
       renderAttendance(data);
-
-      // Stop polling when session expires
       if (!data.is_active) clearInterval(pollInterval);
-    } catch (e) {
-      console.error("Poll error:", e);
-    }
+    } catch (e) { console.error(e); }
   }
 
   function renderAttendance(data) {
-    const badge = document.getElementById("count-badge");
-    const dot = document.getElementById("status-dot");
-    const body = document.getElementById("attendance-body");
+    const enrolled = parseInt(document.getElementById("total_enrolled").value) || 0;
+    const count = data.total_count;
 
-    badge.textContent = `${data.total_count} student${data.total_count !== 1 ? "s" : ""}`;
-    dot.className = data.is_active ? "active" : "";
-
-    if (data.records.length === 0) {
-      body.innerHTML = `<div id="empty-state"><div class="icon">⏳</div><div>Waiting for students to scan...</div></div>`;
-      return;
+    // Update count badge
+    if (enrolled > 0) {
+      const pct = Math.round(count / enrolled * 100);
+      document.getElementById("count-badge").textContent = `${count} / ${enrolled} students (${pct}%)`;
+    } else {
+      document.getElementById("count-badge").textContent = `${count} student${count !== 1 ? "s" : ""}`;
     }
 
-    const rows = data.records.map((r, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td><strong>${r.full_name}</strong></td>
-        <td><code>${r.student_id}</code></td>
-        <td>${r.telegram_username ? "@" + r.telegram_username : "—"}</td>
-        <td><span class="distance-badge">${r.distance_meters}m</span></td>
-        <td>${new Date(r.submitted_at).toLocaleTimeString()}</td>
-      </tr>
-    `).join("");
+    // Update live rate box
+    const rateBox = document.getElementById("live-rate-box");
+    if (enrolled > 0) {
+      const pct = Math.min(Math.round(count / enrolled * 100), 100);
+      const bar = document.getElementById("live-rate-bar");
+      const label = document.getElementById("live-rate-label");
+      const cls = pct >= 75 ? "good" : pct >= 50 ? "warn" : "low";
+      bar.style.width = pct + "%";
+      bar.className = cls;
+      label.textContent = pct + "%";
+      label.className = cls;
+      document.getElementById("live-rate-count").textContent = `${count} present`;
+      document.getElementById("live-rate-enrolled").textContent = `of ${enrolled} enrolled`;
+      rateBox.style.display = "block";
+    } else {
+      rateBox.style.display = "none";
+    }
 
-    body.innerHTML = `
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Student ID</th>
-            <th>Telegram</th>
-            <th>Distance</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
+    document.getElementById("status-dot").className = data.is_active ? "active" : "";
+    const body = document.getElementById("attendance-body");
+    if (data.records.length === 0) { body.innerHTML = `<div id="empty-state"><div class="icon">⏳</div><div>Waiting for students to scan...</div></div>`; return; }
+    const rows = data.records.map((r, i) => {
+      const badge = r.method === "qr" ? `<span class="badge-qr">QR</span>` : `<span class="badge-manual">MANUAL</span>`;
+      const dist = r.distance_meters != null ? `<span class="distance-badge">${r.distance_meters}m</span>` : "—";
+      const note = r.note ? `<br><span style="font-size:0.72rem;color:#9ca3af;">${r.note}</span>` : "";
+      return `<tr><td>${i+1}</td><td><strong>${r.full_name}</strong>${note}</td><td><code>${r.student_id}</code></td><td>${r.telegram_username ? "@"+r.telegram_username : "—"}</td><td>${badge}</td><td>${dist}</td><td>${new Date(r.submitted_at).toLocaleTimeString()}</td></tr>`;
+    }).join("");
+    body.innerHTML = `<table><thead><tr><th>#</th><th>Name</th><th>Student ID</th><th>Telegram</th><th>Method</th><th>Distance</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  let searchTimeout = null;
+  function searchStudents() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+      const q = document.getElementById("manual-search").value.trim();
+      const resultsDiv = document.getElementById("search-results");
+      if (!q) { resultsDiv.style.display = "none"; return; }
+      try {
+        const res = await fetch(`${API}/api/students/search?q=${encodeURIComponent(q)}&secret=${encodeURIComponent(currentSecret)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.length) { resultsDiv.style.display = "none"; return; }
+        resultsDiv.innerHTML = data.map(s => `<div class="search-result-item" onclick="selectStudent('${s.student_id}', '${s.full_name.replace(/'/g,"\\'")}')"><div>${s.full_name}</div><div class="sid">${s.student_id}${s.telegram_username ? " · @"+s.telegram_username : ""}</div></div>`).join("");
+        resultsDiv.style.display = "block";
+      } catch(e) {}
+    }, 300);
+  }
+
+  function selectStudent(sid, name) {
+    selectedStudentId = sid;
+    document.getElementById("selected-name").textContent = name;
+    document.getElementById("selected-sid").textContent = sid;
+    document.getElementById("selected-student").style.display = "block";
+    document.getElementById("search-results").style.display = "none";
+    document.getElementById("manual-search").value = "";
+    document.getElementById("manual-feedback").style.display = "none";
+  }
+
+  function resetManualSection() {
+    selectedStudentId = null;
+    document.getElementById("selected-student").style.display = "none";
+    document.getElementById("manual-search").value = "";
+    document.getElementById("manual-note").value = "";
+    document.getElementById("search-results").style.display = "none";
+    document.getElementById("manual-search").focus();
+  }
+
+  async function submitManual() {
+    if (!selectedStudentId || !currentSessionId) return;
+    const note = document.getElementById("manual-note").value.trim();
+    const fb = document.getElementById("manual-feedback");
+    try {
+      const res = await fetch(`${API}/api/sessions/${currentSessionId}/manual`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: selectedStudentId, note, secret: currentSecret })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fb.textContent = "✅ " + data.full_name + " marked present manually.";
+        fb.className = "ok"; fb.style.display = "block";
+        resetManualSection();
+        pollAttendance();
+        setTimeout(() => { fb.style.display = "none"; }, 3000);
+      } else {
+        fb.textContent = "❌ " + data.detail;
+        fb.className = "err"; fb.style.display = "block";
+      }
+    } catch(e) {
+      fb.textContent = "❌ Request failed.";
+      fb.className = "err"; fb.style.display = "block";
+    }
+  }
+
+  function clearSession() {
+    if (!confirm("Clear current session from dashboard? This does not delete attendance data.")) return;
+    localStorage.removeItem("sessionId"); localStorage.removeItem("secret");
+    localStorage.removeItem("expiresAt"); localStorage.removeItem("qrImage");
+    localStorage.removeItem("sessionMeta"); localStorage.removeItem("groupName");
+    currentSessionId = null; currentSecret = null; expiresAt = null;
+    clearInterval(pollInterval); clearInterval(countdownInterval);
+    document.getElementById("qr-section").style.display = "none";
+    document.getElementById("live-rate-box").style.display = "none";
+    document.getElementById("manual-section").style.display = "none";
+    document.getElementById("btn-csv").style.display = "none";
+    document.getElementById("btn-sort").style.display = "none";
+    document.getElementById("btn-pdf").style.display = "none";
+    document.getElementById("btn-clear").style.display = "none";
+    document.getElementById("attendance-body").innerHTML = '<div id="empty-state"><div class="icon">📭</div><div>Generate a QR code to start taking attendance</div></div>';
+    document.getElementById("count-badge").textContent = "0 students";
+    document.getElementById("status-dot").className = "";
+  }
+  function exportCSV() { if (currentSessionId) window.open(`${API}/api/sessions/${currentSessionId}/export/csv?secret=${encodeURIComponent(currentSecret)}`); }
+  function exportPDF() { if (currentSessionId) window.open(`${API}/api/sessions/${currentSessionId}/export/pdf?secret=${encodeURIComponent(currentSecret)}`); }
+  function exportPDFSorted() { if (currentSessionId) window.open(`${API}/api/sessions/${currentSessionId}/export/pdf?secret=${encodeURIComponent(currentSecret)}&sort=alpha`); }
+
+  // ── QR Fullscreen ────────────────────────────────────────────────────────────
+  function openFullscreen() {
+    const src = document.getElementById("qr-img").src;
+    const meta = document.getElementById("session-meta").textContent;
+    const countdown = document.getElementById("countdown").textContent;
+    if (!src || src.endsWith("undefined")) return;
+    document.getElementById("qr-fullscreen-img").src = src;
+    document.getElementById("qr-fullscreen-meta").textContent = meta;
+    document.getElementById("qr-fullscreen-countdown").textContent = countdown;
+    document.getElementById("qr-fullscreen").style.display = "flex";
+    // Keep countdown synced
+    window._fullscreenTimer = setInterval(() => {
+      const c = document.getElementById("countdown").textContent;
+      document.getElementById("qr-fullscreen-countdown").textContent = c;
+      if (c.includes("expired")) {
+        document.getElementById("qr-fullscreen-meta").textContent += " — EXPIRED";
+        clearInterval(window._fullscreenTimer);
+      }
+    }, 1000);
+  }
+
+  function closeFullscreen() {
+    document.getElementById("qr-fullscreen").style.display = "none";
+    if (window._fullscreenTimer) clearInterval(window._fullscreenTimer);
+  }
+
+  // Close on Escape key
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeFullscreen(); });
+
+  // ── Groups Dropdown ─────────────────────────────────────────────────────────
+  let groupsData = [];
+
+  async function loadGroupsDropdown() {
+    try {
+      const res = await fetch("/api/groups");
+      if (!res.ok) return;
+      groupsData = await res.json();
+      const sel = document.getElementById("group_name");
+      const current = sel.value;
+      sel.innerHTML = `<option value="">-- Select group --</option>` +
+        groupsData.map(g => `<option value="${g.name}" data-enrollment="${g.enrollment}">${g.name} (${g.enrollment} enrolled)</option>`).join("");
+      if (current) sel.value = current;
+    } catch(e) { console.error("Could not load groups", e); }
+  }
+
+  function onGroupSelect() {
+    const sel = document.getElementById("group_name");
+    const opt = sel.options[sel.selectedIndex];
+    const enrollment = opt ? opt.getAttribute("data-enrollment") : null;
+    if (enrollment) {
+      document.getElementById("total_enrolled").value = enrollment;
+    } else {
+      document.getElementById("total_enrolled").value = 0;
+    }
+  }
+
+  // ── Saved Locations ────────────────────────────────────────────────────────
+  async function loadSavedLocations() {
+    const secret = document.getElementById("secret").value;
+    if (!secret) return;
+    try {
+      const res = await fetch(`${API}/api/locations?secret=${encodeURIComponent(secret)}`);
+      if (!res.ok) return;
+      const locs = await res.json();
+      const sel = document.getElementById("location-select");
+      const current = sel.value;
+      sel.innerHTML = '<option value="">— or pick a saved location —</option>' +
+        locs.map(l => `<option value="${l.name}" data-lat="${l.lat}" data-lng="${l.lng}" data-radius="${l.radius_meters}">${l.name} (r:${l.radius_meters}m)</option>`).join("");
+      if (current) sel.value = current;
+    } catch(e) {}
+  }
+
+  function fillSavedLocation() {
+    const sel = document.getElementById("location-select");
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.dataset.lat) return;
+    document.getElementById("lat").value = opt.dataset.lat;
+    document.getElementById("lng").value = opt.dataset.lng;
+    document.getElementById("radius").value = opt.dataset.radius;
+  }
+
+  function showSaveLocation() {
+    const lat = document.getElementById("lat").value;
+    const lng = document.getElementById("lng").value;
+    if (!lat || !lng) { alert("Enter coordinates first."); return; }
+    document.getElementById("save-location-form").style.display = "block";
+  }
+
+  function hideSaveLocation() {
+    document.getElementById("save-location-form").style.display = "none";
+    document.getElementById("location-name").value = "";
+  }
+
+  async function saveLocation() {
+    const secret = document.getElementById("secret").value;
+    if (!secret) { alert("Enter your professor secret first."); return; }
+    const name = document.getElementById("location-name").value.trim();
+    const lat = document.getElementById("lat").value;
+    const lng = document.getElementById("lng").value;
+    const radius = document.getElementById("radius").value || 100;
+    if (!name) { alert("Enter a name for this location."); return; }
+    try {
+      const res = await fetch(
+        `${API}/api/locations?name=${encodeURIComponent(name)}&lat=${lat}&lng=${lng}&radius_meters=${radius}&secret=${encodeURIComponent(secret)}`,
+        { method: "POST" }
+      );
+      if (res.ok) {
+        hideSaveLocation();
+        await loadSavedLocations();
+        // Auto-select the just-saved location
+        document.getElementById("location-select").value = name;
+        alert(`✅ "${name}" saved! You can now pick it from the dropdown next time.`);
+      } else {
+        const e = await res.json();
+        alert("Error: " + e.detail);
+      }
+    } catch(e) { alert("Could not save location."); }
+  }
+
+  // Load saved locations when secret field is filled
+  document.addEventListener("DOMContentLoaded", () => {
+    const secretField = document.getElementById("secret");
+    secretField.addEventListener("blur", loadSavedLocations);
+    // Also try loading if secret is already filled (restored from localStorage)
+    if (secretField.value) loadSavedLocations();
+  });
+
+  // Restore session on page load
+  function restoreSession() {
+    // If no professor is logged in, don't restore — show login overlay instead
+    if (!currentProfessor) {
+      document.getElementById("login-overlay").style.display = "flex";
+      return;
+    }
+    if (!currentSessionId || !currentSecret || !expiresAt) return;
+    const now = new Date();
+    // Show QR and manual section regardless of expiry (session data still useful for exports/manual)
+    const qrImage = localStorage.getItem("qrImage");
+    const sessionMeta = localStorage.getItem("sessionMeta");
+    if (qrImage) document.getElementById("qr-img").src = "data:image/png;base64," + qrImage;
+    if (sessionMeta) document.getElementById("session-meta").textContent = sessionMeta;
+    document.getElementById("qr-section").style.display = "block";
+    document.getElementById("manual-section").style.display = "block";
+    document.getElementById("btn-csv").style.display = "inline-block";
+    document.getElementById("btn-sort").style.display = "inline-block";
+    document.getElementById("btn-pdf").style.display = "inline-block";
+    document.getElementById("btn-clear").style.display = "inline-block";
+    // Restore secret field so professor does not need to retype
+    document.getElementById("secret").value = currentSecret;
+    loadSavedLocations();
+    if (now < expiresAt) {
+      // QR still valid — start countdown and polling
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+      pollAttendance();
+      pollInterval = setInterval(pollAttendance, 3000);
+    } else {
+      // QR expired — clear everything, start fresh
+      localStorage.removeItem("sessionId"); localStorage.removeItem("secret");
+      localStorage.removeItem("expiresAt"); localStorage.removeItem("qrImage");
+      localStorage.removeItem("sessionMeta"); localStorage.removeItem("groupName");
+      currentSessionId = null; currentSecret = null; expiresAt = null;
+      document.getElementById("qr-section").style.display = "none";
+      document.getElementById("manual-section").style.display = "none";
+      document.getElementById("btn-csv").style.display = "none";
+      document.getElementById("btn-sort").style.display = "none";
+      document.getElementById("btn-pdf").style.display = "none";
+      document.getElementById("btn-clear").style.display = "none";
+      document.getElementById("attendance-body").innerHTML = `<div id="empty-state"><div class="icon">📭</div><div>Generate a QR code to start taking attendance</div></div>`;
+    }
+  }
+  // checkLogin() handles restoreSession() after verifying professor is logged in
+  checkLogin();
+
+  async function loadHistory() {
+    const secret = document.getElementById("history-secret").value;
+    if (!secret) { alert("Enter your professor secret."); return; }
+    try {
+      const res = await fetch(`${API}/api/sessions?secret=${encodeURIComponent(secret)}`);
+      if (!res.ok) { alert("Invalid secret or server error."); return; }
+      const sessions = await res.json();
+      const list = document.getElementById("history-list");
+      if (!sessions.length) { list.innerHTML = `<div style="text-align:center;padding:48px;color:#9ca3af;">No sessions found.</div>`; return; }
+      list.innerHTML = sessions.map(s => {
+        const date = new Date(s.created_at).toLocaleDateString();
+        const time = new Date(s.created_at).toLocaleTimeString();
+        const dot = s.is_active ? `<span style="color:#10b981;font-size:0.78rem;">● Active</span>` : `<span style="color:#9ca3af;font-size:0.78rem;">● Ended</span>`;
+        return `<div class="session-card">
+          <div class="info"><h3>${s.course_name}</h3><p>👨‍🏫 ${s.professor_name} &nbsp;·&nbsp; 📅 ${date} ${time} &nbsp;·&nbsp; ${dot}</p></div>
+          <div class="actions">
+            <span class="session-count">${s.attendance_count} present</span>
+            <button class="secondary" onclick="window.open('/api/sessions/${s.session_id}/export/csv?secret=${encodeURIComponent(secret)}')">⬇ CSV</button>
+            <button class="secondary" onclick="window.open('/api/sessions/${s.session_id}/export/pdf?secret=${encodeURIComponent(secret)}')">🖨 PDF</button>
+          </div>
+        </div>`;
+      }).join("");
+    } catch(e) { alert("Could not load history."); }
+  }
+
+  // Course Summary
+  async function loadCourses() {
+    const secret = document.getElementById("summary-secret").value;
+    if (!secret) { alert("Enter your professor secret."); return; }
+    try {
+      const res = await fetch(`${API}/api/courses?secret=${encodeURIComponent(secret)}`);
+      if (!res.ok) { alert("Invalid secret."); return; }
+      const courses = await res.json();
+      const sel = document.getElementById("course-select");
+      sel.innerHTML = '<option value="">-- Choose a course --</option>' +
+        courses.map(c => `<option value="${c.course_name}|||${c.group_name}">${c.course_name} — ${c.group_name}</option>`).join("");
+      document.getElementById("course-selector").style.display = "block";
+    } catch(e) { alert("Could not load courses."); }
+  }
+
+  let chartDonut = null, chartBar = null, chartTrend = null;
+
+  async function loadSummary() {
+    const secret = document.getElementById("summary-secret").value;
+    const selected = document.getElementById("course-select").value;
+    const threshold = parseInt(document.getElementById("threshold-input").value) || 80;
+    if (!selected) { alert("Please select a course."); return; }
+    const [course, group] = selected.split("|||");
+
+    try {
+      // Hide sections while loading
+      document.getElementById("summary-header").style.display = "none";
+      document.getElementById("summary-charts").style.display = "none";
+      document.getElementById("summary-bar-section").style.display = "none";
+      document.getElementById("summary-table-section").style.display = "none";
+
+      // Fetch summary and trend in parallel
+      const [summaryRes, trendRes] = await Promise.all([
+        fetch(`${API}/api/courses/${encodeURIComponent(course)}/summary?group_name=${encodeURIComponent(group)}&secret=${encodeURIComponent(secret)}&threshold=${threshold}`),
+        fetch(`${API}/api/courses/${encodeURIComponent(course)}/trend?group_name=${encodeURIComponent(group)}&secret=${encodeURIComponent(secret)}`)
+      ]);
+      if (!summaryRes.ok) { alert("Could not load summary."); return; }
+      const data = await summaryRes.json();
+      const trend = trendRes.ok ? await trendRes.json() : [];
+
+      const el = document.getElementById("summary-content");
+
+      const atRiskBadge = data.at_risk_count > 0
+        ? `<span style="background:#fee2e2;color:#991b1b;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">⚠️ ${data.at_risk_count} at risk</span>`
+        : `<span style="background:#d1fae5;color:#065f46;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:700;">✅ All above threshold</span>`;
+
+      const aboveThreshold = data.students.filter(s => !s.at_risk).length;
+      const belowThreshold = data.at_risk_count;
+
+      const rows = data.students.map((s, i) => {
+        const pct = s.percentage;
+        const color = pct>=80 ? "#10b981" : pct>=60 ? "#f59e0b" : "#ef4444";
+        const textColor = pct>=80 ? "#065f46" : pct>=60 ? "#92400e" : "#991b1b";
+        const bar = `<div style="background:#f0f2f5;border-radius:4px;height:6px;width:80px;display:inline-block;vertical-align:middle;"><div style="background:${color};width:${Math.min(pct,100)}%;height:100%;border-radius:4px;"></div></div>`;
+        const rowBg = s.at_risk ? "background:#fff7f7;" : "";
+        return `<tr style="${rowBg}"><td>${i+1}</td><td><strong>${s.full_name}</strong></td><td><code>${s.student_id}</code></td><td>${s.telegram_username ? "@"+s.telegram_username : "—"}</td><td>${s.attended} / ${s.total_sessions}</td><td>${bar} <strong style="margin-left:6px;color:${textColor}">${pct}%</strong></td></tr>`;
+      }).join("");
+
+      // Update header and table only (leave chart canvases untouched in DOM)
+      document.getElementById("summary-header").innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <h2 style="margin:0;">${data.course_name} <span style="font-weight:400;color:#6b7280;">— ${group}</span></h2>
+            <p style="font-size:0.8rem;color:#6b7280;margin-top:4px;">${data.total_students} students · threshold ${threshold}%</p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            ${atRiskBadge}
+            <button class="secondary" onclick="window.open('/api/courses/${encodeURIComponent(course)}/summary/csv?group_name=${encodeURIComponent(group)}&secret=${encodeURIComponent(secret)}&threshold=${threshold}')">⬇ Export CSV</button>
+          </div>
+        </div>`;
+      document.getElementById("summary-header").style.display = "block";
+      document.getElementById("summary-charts").style.display = "grid";
+      document.getElementById("summary-donut-legend").innerHTML =
+        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Above (${aboveThreshold})</span>
+         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>At Risk (${belowThreshold})</span>`;
+      document.getElementById("summary-bar-section").style.display = "block";
+      document.getElementById("summary-table-body").innerHTML = rows;
+      document.getElementById("summary-table-section").style.display = "block";
+
+      // Destroy old charts BEFORE rebuilding DOM
+      [chartDonut, chartTrend, chartBar].forEach(c => { try { if (c) c.destroy(); } catch(e) {} });
+      chartDonut = null; chartTrend = null; chartBar = null;
+
+      // Donut chart
+      chartDonut = new Chart(document.getElementById("chartDonut"), {
+        type: "doughnut",
+        data: {
+          datasets: [{
+            data: [aboveThreshold, belowThreshold],
+            backgroundColor: ["#10b981", "#ef4444"],
+            borderWidth: 0,
+            hoverOffset: 4,
+          }]
+        },
+        options: {
+          cutout: "70%",
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            label: ctx => ctx.parsed === aboveThreshold ? ` Above threshold: ${ctx.parsed}` : ` At risk: ${ctx.parsed}`
+          }}},
+          animation: { animateRotate: true, duration: 600 }
+        }
+      });
+
+      // Trend line chart
+      chartTrend = new Chart(document.getElementById("chartTrend"), {
+        type: "line",
+        data: {
+          labels: trend.map((t, i) => "Session " + (i+1) + (t.date ? " (" + t.date + ")" : "")),
+          datasets: [{
+            label: "Students Present",
+            data: trend.map(t => t.attended),
+            borderColor: "#6366f1",
+            backgroundColor: "rgba(99,102,241,0.08)",
+            borderWidth: 2.5,
+            pointBackgroundColor: "#6366f1",
+            pointRadius: 5,
+            fill: true,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "#f0f2f5" } },
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+          }
+        }
+      });
+
+      // Bar chart — sort by percentage descending
+      const sorted = [...data.students].sort((a, b) => b.percentage - a.percentage);
+      chartBar = new Chart(document.getElementById("chartBar"), {
+        type: "bar",
+        data: {
+          labels: sorted.map(s => s.full_name.split(" ")[0]),  // first name for space
+          datasets: [{
+            label: "Attendance %",
+            data: sorted.map(s => s.percentage),
+            backgroundColor: sorted.map(s => s.percentage >= threshold ? "#10b981" : s.percentage >= 60 ? "#f59e0b" : "#ef4444"),
+            borderRadius: 4,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: {
+              title: (items) => sorted[items[0].dataIndex].full_name,
+              label: (item) => ` ${item.raw}% — ${sorted[item.dataIndex].attended}/${sorted[item.dataIndex].total_sessions} sessions`
+            }}
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%" }, grid: { color: "#f0f2f5" } },
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+          }
+        }
+      });
+
+    } catch(e) { console.error(e); alert("Could not load summary."); }
   }
 </script>
+
+<!-- SUMMARY PAGE -->
+<div class="page" id="page-summary">
+  <div style="margin-bottom:20px;"><h2 style="font-size:1.1rem;font-weight:600;">📊 Course Attendance Summary</h2></div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;">
+    <input id="summary-secret" type="password" placeholder="Professor secret" style="max-width:260px;" />
+    <button class="primary" style="margin:0;width:auto;padding:9px 20px;" onclick="loadCourses()">Load Courses</button>
+  </div>
+  <div id="course-selector" style="display:none;margin-bottom:20px;">
+    <div style="display:flex;gap:10px;">
+      <select id="course-select" style="flex:1;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;background:white;"><option value="">-- Choose a course --</option></select>
+      <input id="threshold-input" type="number" value="80" min="0" max="100" style="width:100px;" placeholder="Min %" />
+      <button class="primary" style="margin:0;width:auto;padding:9px 20px;" onclick="loadSummary()">View</button>
+    </div>
+  </div>
+
+  <!-- Header card (dynamic) -->
+  <div class="card" id="summary-header" style="display:none;margin-bottom:20px;"></div>
+
+  <!-- Charts row (stable canvases — never recreated) -->
+  <div id="summary-charts" style="display:none;grid-template-columns:240px 1fr;gap:20px;margin-bottom:20px;">
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:12px;">Threshold Status</p>
+      <canvas id="chartDonut" width="160" height="160"></canvas>
+      <div id="summary-donut-legend" style="display:flex;gap:16px;margin-top:12px;font-size:0.78rem;"></div>
+    </div>
+    <div class="card">
+      <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:12px;">Attendance Per Session</p>
+      <canvas id="chartTrend" height="80"></canvas>
+    </div>
+  </div>
+
+  <!-- Bar chart (stable canvas) -->
+  <div class="card" id="summary-bar-section" style="display:none;margin-bottom:20px;">
+    <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:12px;">Student Attendance Rates</p>
+    <canvas id="chartBar" height="60"></canvas>
+  </div>
+
+  <!-- Table (dynamic body only) -->
+  <div class="card" id="summary-table-section" style="display:none;">
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Student ID</th><th>Telegram</th><th>Attended</th><th>Percentage</th></tr></thead>
+      <tbody id="summary-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
 </body>
 </html>

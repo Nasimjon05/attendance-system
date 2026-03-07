@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — Attendance System</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+    #login-overlay { position: fixed; inset: 0; background: #1a1a2e; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .login-box { background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); text-align: center; }
+    .login-box h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .login-box p { font-size: 0.85rem; color: #6b7280; margin-bottom: 28px; }
+    .login-box input { width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; outline: none; margin-bottom: 12px; }
+    .login-box input:focus { border-color: #6366f1; }
+    .login-btn { width: 100%; padding: 11px; background: #1a1a2e; color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    #login-error { display: none; color: #991b1b; font-size: 0.82rem; margin-bottom: 10px; background: #fee2e2; padding: 8px 12px; border-radius: 8px; }
+    header { background: #1a1a2e; color: white; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1.15rem; font-weight: 600; }
+    header .spacer { flex: 1; }
+    header select { padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-size: 0.85rem; outline: none; cursor: pointer; }
+    header select option { background: #1a1a2e; }
+    header button { padding: 6px 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: white; cursor: pointer; font-size: 0.82rem; }
+    main { max-width: 1300px; margin: 28px auto; padding: 0 20px; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 14px; }
+    .overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: white; border-radius: 12px; padding: 22px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 16px; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .stat-value { font-size: 1.7rem; font-weight: 700; line-height: 1; }
+    .stat-label { font-size: 0.78rem; color: #6b7280; margin-top: 3px; }
+    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th { text-align: left; padding: 9px 14px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #6b7280; border-bottom: 2px solid #f0f2f5; background: #fafafa; }
+    tbody tr { border-bottom: 1px solid #f9fafb; }
+    tbody tr:hover { background: #f9fafb; }
+    tbody td { padding: 11px 14px; vertical-align: middle; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .view-btn { padding: 6px 16px; border: 1.5px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: #6b7280; }
+    .view-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+    .matrix-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 500px; }
+    .matrix-table th { padding: 8px 12px; background: #1a1a2e; color: white; text-align: center; font-size: 0.72rem; white-space: nowrap; }
+    .matrix-table th.rh { text-align: left; }
+    .matrix-table td { padding: 8px 12px; text-align: center; border: 1px solid #f0f2f5; font-weight: 600; }
+    .matrix-table td.rh { text-align: left; font-weight: 700; background: #fafafa; }
+    #loading { display: none; text-align: center; padding: 60px; color: #9ca3af; }
+  </style>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-box">
+    <div style="font-size:2.5rem;margin-bottom:8px;">🏛</div>
+    <h1>Admin Dashboard</h1>
+    <p>University Attendance System</p>
+    <input id="admin-pwd" type="password" placeholder="Enter admin password"
+      onkeydown="if(event.key==='Enter') doLogin()" autofocus />
+    <div id="login-error"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In as Admin</button>
+    <div style="margin-top:16px;font-size:0.8rem;color:#9ca3af;">
+      <a href="/dashboard" style="color:#6366f1;text-decoration:none;">← Professor Portal</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <span>🏛</span>
+  <h1>University Admin Dashboard</h1>
+  <div class="spacer"></div>
+  <select id="period-select" onchange="loadAll()">
+    <option value="all">All Time</option>
+    <option value="1month">Last Month</option>
+    <option value="3months">Last 3 Months</option>
+    <option value="6months">Last 6 Months</option>
+  </select>
+  <button onclick="doLogout()">Sign Out</button>
+</header>
+
+<main>
+  <div id="loading">⏳ Loading data...</div>
+  <div class="overview-grid" id="overview-grid"></div>
+
+  <div class="card">
+    <p class="card-title">Average Students per Session — by Professor</p>
+    <canvas id="profChart" height="60"></canvas>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <p class="card-title" style="margin:0;">Attendance Rate</p>
+      <div style="display:flex;gap:8px;">
+        <button class="view-btn active" id="btn-group" onclick="setView('group')">By Group</button>
+        <button class="view-btn" id="btn-subject" onclick="setView('subject')">By Subject</button>
+      </div>
+    </div>
+    <canvas id="rateChart" height="70"></canvas>
+  </div>
+
+  <div class="card">
+    <p class="card-title">Attendance Rate Matrix — Group × Subject</p>
+    <div id="matrix-container" style="overflow-x:auto;"></div>
+  </div>
+
+  <div class="tables-grid">
+    <div class="card" style="margin-bottom:0;">
+      <p class="card-title">👨‍🏫 Professor Statistics</p>
+      <div id="prof-table"></div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <p class="card-title" id="group-table-title">🎓 Group Statistics</p>
+      <div id="group-table"></div>
+    </div>
+  </div>
+
+  <!-- Professor Account Management -->
+  <div class="card" style="margin-top:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <p class="card-title" style="margin:0;">🔑 Professor Accounts</p>
+      <button class="view-btn active" onclick="showCreateForm()">+ Add Professor</button>
+    </div>
+
+    <!-- Create form -->
+    <div id="create-prof-form" style="display:none;background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label style="font-size:0.78rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Full Name</label>
+          <input id="new-fullname" type="text" placeholder="Dr. Smith" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none;" /></div>
+        <div><label style="font-size:0.78rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Username</label>
+          <input id="new-username" type="text" placeholder="dr.smith" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none;" /></div>
+        <div><label style="font-size:0.78rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Password</label>
+          <input id="new-password" type="text" placeholder="initial password" style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none;" /></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="view-btn active" onclick="createProfessor()">Create Account</button>
+        <button class="view-btn" onclick="hideCreateForm()">Cancel</button>
+      </div>
+      <div id="create-error" style="display:none;margin-top:8px;color:#991b1b;font-size:0.82rem;background:#fee2e2;padding:8px 12px;border-radius:8px;"></div>
+    </div>
+
+    <div id="prof-accounts-table"></div>
+  </div>
+  <!-- Group Management -->
+  <div class="card" style="margin-top:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <p class="card-title" style="margin:0;">👥 Groups & Enrollment</p>
+      <button class="view-btn active" onclick="showCreateGroupForm()">+ Create Group</button>
+    </div>
+
+    <!-- Create group form -->
+    <div id="create-group-form" style="display:none;background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label style="font-size:0.78rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Group Name</label>
+          <input id="new-group-name" type="text" placeholder="e.g. I40C"
+            style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none;" /></div>
+        <div><label style="font-size:0.78rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">Enrolled Students</label>
+          <input id="new-group-enrollment" type="number" placeholder="e.g. 30" min="1"
+            style="width:100%;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none;" /></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="view-btn active" onclick="createGroup()">Create Group</button>
+        <button class="view-btn" onclick="hideCreateGroupForm()">Cancel</button>
+      </div>
+      <div id="create-group-error" style="display:none;margin-top:8px;color:#991b1b;font-size:0.82rem;background:#fee2e2;padding:8px 12px;border-radius:8px;"></div>
+    </div>
+
+    <div id="groups-table"></div>
+  </div>
+
+  <!-- View Group Students Modal -->
+  <div id="group-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:28px;width:100%;max-width:700px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 id="modal-group-title" style="font-size:1.1rem;font-weight:700;margin:0;"></h2>
+        <button class="view-btn" onclick="closeGroupModal()">✕ Close</button>
+      </div>
+      <div id="modal-students-table"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  let profChart = null, rateChart = null;
+  let adminSecret = null;
+  let currentView = "group";
+  let cachedData = {};
+
+  function checkLogin() {
+    const authed = sessionStorage.getItem("admin_authed");
+    const secret = sessionStorage.getItem("admin_secret");
+    if (authed === "1" && secret) {
+      adminSecret = secret;
+      document.getElementById("login-overlay").style.display = "none";
+      loadAll();
+    }
+  }
+
+  async function doLogin() {
+    const pwd = document.getElementById("admin-pwd").value.trim();
+    if (!pwd) return;
+    const errEl = document.getElementById("login-error");
+    const btn = document.getElementById("login-btn");
+    btn.textContent = "Signing in...";
+    btn.disabled = true;
+    errEl.style.display = "none";
+    try {
+      const res = await fetch("/api/auth/admin?secret=" + encodeURIComponent(pwd), { method: "POST" });
+      if (res.ok) {
+        sessionStorage.setItem("admin_authed", "1");
+        sessionStorage.setItem("admin_secret", pwd);
+        adminSecret = pwd;
+        document.getElementById("login-overlay").style.display = "none";
+        loadAll();
+      } else {
+        errEl.textContent = "Incorrect password.";
+        errEl.style.display = "block";
+      }
+    } catch(e) {
+      errEl.textContent = "Could not reach server: " + e.message;
+      errEl.style.display = "block";
+    } finally {
+      btn.textContent = "Sign In as Admin";
+      btn.disabled = false;
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem("admin_authed");
+    sessionStorage.removeItem("admin_secret");
+    location.reload();
+  }
+
+  async function loadAll() {
+    if (!adminSecret) return;
+    const period = document.getElementById("period-select").value;
+    const s = encodeURIComponent(adminSecret);
+    document.getElementById("loading").style.display = "block";
+    try {
+      const [r1,r2,r3,r4,r5] = await Promise.all([
+        fetch("/api/admin/overview?secret="+s+"&period="+period),
+        fetch("/api/admin/professors?secret="+s+"&period="+period),
+        fetch("/api/admin/groups?secret="+s+"&period="+period),
+        fetch("/api/admin/subjects?secret="+s+"&period="+period),
+        fetch("/api/admin/matrix?secret="+s+"&period="+period),
+      ]);
+      if (!r1.ok) { doLogout(); return; }
+      cachedData = {
+        overview: await r1.json(),
+        profs:    await r2.json(),
+        groups:   await r3.json(),
+        subjects: await r4.json(),
+        matrix:   await r5.json(),
+      };
+      document.getElementById("loading").style.display = "none";
+      renderAll();
+      loadProfessorAccounts();
+      loadGroups();
+    } catch(e) {
+      document.getElementById("loading").style.display = "none";
+      console.error(e);
+    }
+  }
+
+  function renderAll() {
+    renderOverview(cachedData.overview);
+    renderProfChart(cachedData.profs);
+    renderRateChart();
+    renderMatrix(cachedData.matrix);
+    renderProfTable(cachedData.profs);
+    renderGroupTable();
+  }
+
+  function setView(view) {
+    currentView = view;
+    document.getElementById("btn-group").classList.toggle("active", view === "group");
+    document.getElementById("btn-subject").classList.toggle("active", view === "subject");
+    renderRateChart();
+    renderGroupTable();
+  }
+
+  function renderOverview(d) {
+    const cards = [
+      { label:"Total Sessions",      value:d.total_sessions,    icon:"📋", bg:"#ede9fe", color:"#6366f1" },
+      { label:"Total Attendances",   value:d.total_attendances, icon:"✅", bg:"#d1fae5", color:"#10b981" },
+      { label:"Registered Students", value:d.total_students,    icon:"🎓", bg:"#fef3c7", color:"#f59e0b" },
+      { label:"Active Professors",   value:d.total_professors,  icon:"👨‍🏫", bg:"#dbeafe", color:"#3b82f6" },
+    ];
+    document.getElementById("overview-grid").innerHTML = cards.map(c =>
+      `<div class="stat-card"><div class="stat-icon" style="background:${c.bg}">${c.icon}</div>
+      <div><div class="stat-value" style="color:${c.color}">${c.value}</div>
+      <div class="stat-label">${c.label}</div></div></div>`
+    ).join("");
+  }
+
+  function renderProfChart(profs) {
+    if (profChart) profChart.destroy();
+    if (!profs.length) return;
+    profChart = new Chart(document.getElementById("profChart"), {
+      type:"bar",
+      data:{ labels:profs.map(p=>p.professor_name), datasets:[{ data:profs.map(p=>p.avg_per_session), backgroundColor:"#6366f1", borderRadius:5, borderSkipped:false }] },
+      options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:item=>` ${item.raw} avg · ${profs[item.dataIndex].total_sessions} sessions`}} }, scales:{ y:{beginAtZero:true,grid:{color:"#f0f2f5"}}, x:{grid:{display:false}} } }
+    });
+  }
+
+  function renderRateChart() {
+    if (rateChart) rateChart.destroy();
+    const data = currentView === "group" ? cachedData.groups : cachedData.subjects;
+    if (!data || !data.length) return;
+
+    const hasEnrollment = data.some(d => d.avg_rate !== null && d.avg_rate !== undefined);
+    const labels = data.map(d => currentView === "group" ? d.group_name : d.course_name);
+
+    // Use avg_rate if available, otherwise fall back to avg_per_session scaled to visible height
+    const values = data.map(d => d.avg_rate !== null && d.avg_rate !== undefined ? d.avg_rate : d.avg_per_session);
+    const colors = data.map(d => {
+      if (!d.total_attendances) return "#e5e7eb";
+      if (d.avg_rate === null || d.avg_rate === undefined) return "#a5b4fc"; // purple = no enrollment
+      return d.avg_rate >= 75 ? "#10b981" : d.avg_rate >= 50 ? "#f59e0b" : "#ef4444";
+    });
+
+    const yMax = hasEnrollment ? 100 : Math.max(...values) * 1.2;
+    const yLabel = hasEnrollment ? v => v + "%" : v => v + " students";
+
+    rateChart = new Chart(document.getElementById("rateChart"), {
+      type:"bar",
+      data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderRadius:5, borderSkipped:false }] },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{ display: !hasEnrollment, labels:{ generateLabels: () => [
+            { text: "No enrollment data — showing avg students per session", fillStyle: "#a5b4fc", strokeStyle:"#a5b4fc" }
+          ]}},
+          tooltip:{callbacks:{label:item=>{
+            const d = data[item.dataIndex];
+            return d.avg_rate !== null && d.avg_rate !== undefined
+              ? ` ${d.avg_rate}% avg · ${d.total_sessions} sessions`
+              : ` ${d.avg_per_session} avg students/session (set Total Enrolled to see %)`;
+          }}}
+        },
+        scales:{
+          y:{ beginAtZero:true, max:yMax, ticks:{callback:yLabel}, grid:{color:"#f0f2f5"} },
+          x:{ grid:{display:false} }
+        }
+      }
+    });
+  }
+
+  function renderMatrix(matrix) {
+    const el = document.getElementById("matrix-container");
+    if (!matrix.length) { el.innerHTML = `<p style="text-align:center;padding:24px;color:#9ca3af">No data yet.</p>`; return; }
+    const groups   = [...new Set(matrix.map(r=>r.group_name))].sort();
+    const subjects = [...new Set(matrix.map(r=>r.course_name))].sort();
+    const lookup   = {};
+    matrix.forEach(r => { lookup[r.group_name+"|||"+r.course_name] = r; });
+    let html = `<table class="matrix-table"><thead><tr><th class="rh">Group \\ Subject</th>${subjects.map(s=>`<th>${s}</th>`).join("")}</tr></thead><tbody>`;
+    groups.forEach(g => {
+      html += `<tr><td class="rh">${g}</td>`;
+      subjects.forEach(s => {
+        const cell = lookup[g+"|||"+s];
+        if (!cell) { html += `<td style="color:#d1d5db;background:#fafafa">—</td>`; return; }
+        const r = (cell.avg_rate !== null && cell.avg_rate !== undefined) ? cell.avg_rate : null;
+        const bg    = r===null?"#ede9fe":r>=75?"#d1fae5":r>=50?"#fef3c7":r>0?"#fee2e2":"#f9fafb";
+        const color = r===null?"#4338ca":r>=75?"#065f46":r>=50?"#92400e":r>0?"#991b1b":"#6b7280";
+        const label = r!==null ? r+"%" : (cell.avg_per_session||0)+" avg";
+        html += `<td style="background:${bg};color:${color}">${label}<div style="font-size:0.68rem;font-weight:400;opacity:0.7">${cell.total_attendances} present</div></td>`;
+      });
+      html += `</tr>`;
+    });
+    el.innerHTML = html + `</tbody></table>`;
+  }
+
+  function renderProfTable(profs) {
+    const el = document.getElementById("prof-table");
+    if (!profs.length) { el.innerHTML = `<p style="text-align:center;padding:24px;color:#9ca3af">No data yet.</p>`; return; }
+    el.innerHTML = `<table><thead><tr><th>#</th><th>Professor</th><th>Groups</th><th>Sessions</th><th>Present</th><th>Avg/Session</th></tr></thead><tbody>
+      ${profs.map((p,i)=>`<tr><td>${i+1}</td><td><strong>${p.professor_name}</strong></td><td>${p.total_groups}</td><td>${p.total_sessions}</td><td>${p.total_attendances}</td><td><strong>${p.avg_per_session}</strong></td></tr>`).join("")}
+    </tbody></table>`;
+  }
+
+  function renderGroupTable() {
+    const isGroup = currentView === "group";
+    const data = isGroup ? cachedData.groups : cachedData.subjects;
+    document.getElementById("group-table-title").textContent = isGroup ? "🎓 Group Statistics" : "📚 Subject Statistics";
+    const el = document.getElementById("group-table");
+    if (!data||!data.length) { el.innerHTML=`<p style="text-align:center;padding:24px;color:#9ca3af">No data yet.</p>`; return; }
+    el.innerHTML = `<table><thead><tr><th>#</th><th>${isGroup?"Group":"Subject"}</th><th>Sessions</th><th>Present</th><th>Avg Rate</th></tr></thead><tbody>
+      ${data.map((d,i)=>{
+        const rate=d.avg_rate||0, name=isGroup?d.group_name:d.course_name;
+        const sub=isGroup?`${d.total_subjects||"?"} subjects`:`${d.total_groups||"?"} groups`;
+        const cls=rate>=75?"badge-green":rate>=50?"badge-yellow":"badge-red";
+        return `<tr><td>${i+1}</td><td><strong>${name}</strong><br><span style="font-size:0.75rem;color:#6b7280">${sub}</span></td><td>${d.total_sessions}</td><td>${d.total_attendances}</td>
+        <td>${rate>0?`<span class="badge ${cls}">${rate}%</span>`:`<span style="color:#9ca3af;font-size:0.8rem">${d.avg_per_session} avg</span>`}</td></tr>`;
+      }).join("")}
+    </tbody></table>`;
+  }
+
+  checkLogin();
+
+  // ── Professor Account Management ───────────────────────────────────────────
+  async function loadProfessorAccounts() {
+    if (!adminSecret) return;
+    try {
+      const res = await fetch("/api/admin/professors/list?secret=" + encodeURIComponent(adminSecret));
+      if (!res.ok) return;
+      const profs = await res.json();
+      renderProfAccounts(profs);
+    } catch(e) { console.error(e); }
+  }
+
+  function renderProfAccounts(profs) {
+    const el = document.getElementById("prof-accounts-table");
+    if (!profs.length) {
+      el.innerHTML = `<p style="text-align:center;padding:24px;color:#9ca3af">No professor accounts yet. Create one above.</p>`;
+      return;
+    }
+    el.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Full Name</th><th>Username</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody>${profs.map((p, i) => `
+        <tr id="prof-row-${p.id}">
+          <td>${i+1}</td>
+          <td><strong>${p.full_name}</strong></td>
+          <td><code>${p.username}</code></td>
+          <td>${p.is_active
+            ? '<span class="badge badge-green">Active</span>'
+            : '<span class="badge badge-red">Disabled</span>'}</td>
+          <td style="font-size:0.78rem;color:#6b7280">${String(p.created_at).split("T")[0]}</td>
+          <td style="white-space:nowrap">
+            <button class="view-btn" onclick="editProfessor(${p.id})" style="font-size:0.75rem;padding:4px 10px;margin-right:4px">✏️ Edit</button>
+            <button class="view-btn" onclick="toggleProfessor(${p.id}, ${p.is_active})" style="font-size:0.75rem;padding:4px 10px;margin-right:4px">${p.is_active ? "🚫 Disable" : "✅ Enable"}</button>
+            <button class="view-btn" onclick="deleteProfessor(${p.id}, '${p.full_name}')" style="font-size:0.75rem;padding:4px 10px;color:#ef4444;border-color:#fca5a5">🗑 Delete</button>
+          </td>
+        </tr>
+        <tr id="edit-row-${p.id}" style="display:none;background:#f9fafb">
+          <td colspan="6" style="padding:12px 14px">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+              <div><label style="font-size:0.75rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Full Name</label>
+                <input id="edit-name-${p.id}" type="text" value="${p.full_name}"
+                  style="width:100%;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none" /></div>
+              <div><label style="font-size:0.75rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">New Password (blank = keep)</label>
+                <input id="edit-pwd-${p.id}" type="text" placeholder="new password"
+                  style="width:100%;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none" /></div>
+              <div style="display:flex;gap:8px">
+                <button class="view-btn active" onclick="saveEdit(${p.id})">Save</button>
+                <button class="view-btn" onclick="cancelEdit(${p.id})">Cancel</button>
+              </div>
+            </div>
+          </td>
+        </tr>`).join("")}</tbody></table>`;
+  }
+
+  function showCreateForm() { document.getElementById("create-prof-form").style.display = "block"; }
+  function hideCreateForm() {
+    document.getElementById("create-prof-form").style.display = "none";
+    ["new-fullname","new-username","new-password"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("create-error").style.display = "none";
+  }
+
+  async function createProfessor() {
+    const fullName = document.getElementById("new-fullname").value.trim();
+    const username = document.getElementById("new-username").value.trim();
+    const password = document.getElementById("new-password").value.trim();
+    const errEl = document.getElementById("create-error");
+    if (!fullName || !username || !password) {
+      errEl.textContent = "All fields are required."; errEl.style.display = "block"; return;
+    }
+    try {
+      const res = await fetch(
+        `/api/admin/professors/create?full_name=${encodeURIComponent(fullName)}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&secret=${encodeURIComponent(adminSecret)}`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (res.ok) { hideCreateForm(); loadProfessorAccounts(); }
+      else { errEl.textContent = data.detail || "Error."; errEl.style.display = "block"; }
+    } catch(e) { errEl.textContent = "Server error."; errEl.style.display = "block"; }
+  }
+
+  function editProfessor(id) { document.getElementById("edit-row-"+id).style.display = "table-row"; }
+  function cancelEdit(id)    { document.getElementById("edit-row-"+id).style.display = "none"; }
+
+  async function saveEdit(id) {
+    const fullName = document.getElementById("edit-name-"+id).value.trim();
+    const password = document.getElementById("edit-pwd-"+id).value.trim();
+    let url = `/api/admin/professors/${id}?secret=${encodeURIComponent(adminSecret)}`;
+    if (fullName) url += `&full_name=${encodeURIComponent(fullName)}`;
+    if (password) url += `&password=${encodeURIComponent(password)}`;
+    try {
+      const res = await fetch(url, { method: "PATCH" });
+      if (res.ok) loadProfessorAccounts();
+      else alert("Error saving changes.");
+    } catch(e) { alert("Server error."); }
+  }
+
+  async function toggleProfessor(id, active) {
+    try {
+      const res = await fetch(`/api/admin/professors/${id}?is_active=${active?0:1}&secret=${encodeURIComponent(adminSecret)}`, { method: "PATCH" });
+      if (res.ok) loadProfessorAccounts();
+    } catch(e) { alert("Server error."); }
+  }
+
+  async function deleteProfessor(id, name) {
+    if (!confirm(`Delete account for "${name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/professors/${id}?secret=${encodeURIComponent(adminSecret)}`, { method: "DELETE" });
+      if (res.ok) loadProfessorAccounts();
+    } catch(e) { alert("Server error."); }
+  }
+
+  // ── Group Management ──────────────────────────────────────────────────────
+  async function loadGroups() {
+    if (!adminSecret) return;
+    try {
+      const res = await fetch("/api/admin/groups/list?secret=" + encodeURIComponent(adminSecret));
+      if (!res.ok) return;
+      renderGroups(await res.json());
+    } catch(e) { console.error(e); }
+  }
+
+  function renderGroups(groups) {
+    const el = document.getElementById("groups-table");
+    if (!groups.length) {
+      el.innerHTML = `<p style="text-align:center;padding:24px;color:#9ca3af">No groups yet. Create one above.</p>`;
+      return;
+    }
+    el.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Group Name</th><th>Enrolled</th><th>Registered Students</th><th>Actions</th></tr></thead>
+      <tbody>${groups.map((g, i) => `
+        <tr id="group-row-${g.id}">
+          <td>${i+1}</td>
+          <td><strong>${g.name}</strong></td>
+          <td>${g.enrollment}</td>
+          <td>
+            <span class="badge ${g.student_count >= g.enrollment ? 'badge-green' : 'badge-yellow'}">${g.student_count} / ${g.enrollment}</span>
+          </td>
+          <td style="white-space:nowrap">
+            <button class="view-btn active" onclick="viewGroupStudents(${g.id}, '${g.name}', ${g.enrollment})"
+              style="font-size:0.75rem;padding:4px 10px;margin-right:4px">👁 View Students</button>
+            <button class="view-btn" onclick="editGroup(${g.id})"
+              style="font-size:0.75rem;padding:4px 10px;margin-right:4px">✏️ Edit</button>
+            <button class="view-btn" onclick="deleteGroup(${g.id}, '${g.name}')"
+              style="font-size:0.75rem;padding:4px 10px;color:#ef4444;border-color:#fca5a5">🗑 Delete</button>
+          </td>
+        </tr>
+        <tr id="group-edit-row-${g.id}" style="display:none;background:#f9fafb">
+          <td colspan="5" style="padding:12px 14px">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+              <div><label style="font-size:0.75rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Group Name</label>
+                <input id="edit-group-name-${g.id}" type="text" value="${g.name}"
+                  style="width:100%;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none"/></div>
+              <div><label style="font-size:0.75rem;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Enrolled Students</label>
+                <input id="edit-group-enrollment-${g.id}" type="number" value="${g.enrollment}" min="1"
+                  style="width:100%;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.875rem;outline:none"/></div>
+              <div style="display:flex;gap:8px">
+                <button class="view-btn active" onclick="saveGroupEdit(${g.id})">Save</button>
+                <button class="view-btn" onclick="cancelGroupEdit(${g.id})">Cancel</button>
+              </div>
+            </div>
+          </td>
+        </tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  function showCreateGroupForm() { document.getElementById("create-group-form").style.display = "block"; }
+  function hideCreateGroupForm() {
+    document.getElementById("create-group-form").style.display = "none";
+    document.getElementById("new-group-name").value = "";
+    document.getElementById("new-group-enrollment").value = "";
+    document.getElementById("create-group-error").style.display = "none";
+  }
+
+  async function createGroup() {
+    const name = document.getElementById("new-group-name").value.trim();
+    const enrollment = document.getElementById("new-group-enrollment").value.trim();
+    const errEl = document.getElementById("create-group-error");
+    if (!name || !enrollment) { errEl.textContent = "Both fields required."; errEl.style.display = "block"; return; }
+    try {
+      const res = await fetch(
+        `/api/admin/groups/create?name=${encodeURIComponent(name)}&enrollment=${enrollment}&secret=${encodeURIComponent(adminSecret)}`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (res.ok) { hideCreateGroupForm(); loadGroups(); }
+      else { errEl.textContent = data.detail || "Error."; errEl.style.display = "block"; }
+    } catch(e) { errEl.textContent = "Server error."; errEl.style.display = "block"; }
+  }
+
+  function editGroup(id) { document.getElementById("group-edit-row-"+id).style.display = "table-row"; }
+  function cancelGroupEdit(id) { document.getElementById("group-edit-row-"+id).style.display = "none"; }
+
+  async function saveGroupEdit(id) {
+    const name = document.getElementById("edit-group-name-"+id).value.trim();
+    const enrollment = document.getElementById("edit-group-enrollment-"+id).value.trim();
+    try {
+      const res = await fetch(
+        `/api/admin/groups/${id}?name=${encodeURIComponent(name)}&enrollment=${enrollment}&secret=${encodeURIComponent(adminSecret)}`,
+        { method: "PATCH" }
+      );
+      if (res.ok) loadGroups();
+      else alert("Error saving.");
+    } catch(e) { alert("Server error."); }
+  }
+
+  async function deleteGroup(id, name) {
+    if (!confirm(`Delete group "${name}"? Students will be unassigned but not deleted.`)) return;
+    try {
+      const res = await fetch(`/api/admin/groups/${id}?secret=${encodeURIComponent(adminSecret)}`, { method: "DELETE" });
+      if (res.ok) loadGroups();
+    } catch(e) { alert("Server error."); }
+  }
+
+  // ── View Group Students Modal ─────────────────────────────────────────────
+  async function viewGroupStudents(groupId, groupName, enrollment) {
+    document.getElementById("modal-group-title").textContent = `👥 ${groupName} — Students`;
+    document.getElementById("modal-students-table").innerHTML = `<p style="text-align:center;padding:24px;color:#9ca3af">Loading...</p>`;
+    document.getElementById("group-modal").style.display = "flex";
+    try {
+      const res = await fetch(`/api/admin/groups/${groupId}/students?secret=${encodeURIComponent(adminSecret)}`);
+      const students = await res.json();
+      renderModalStudents(students, groupId, enrollment);
+    } catch(e) {
+      document.getElementById("modal-students-table").innerHTML = `<p style="color:#ef4444;text-align:center;padding:16px">Failed to load students.</p>`;
+    }
+  }
+
+  function renderModalStudents(students, groupId, enrollment) {
+    const el = document.getElementById("modal-students-table");
+    const header = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-size:0.82rem;color:#6b7280">${students.length} registered of ${enrollment} enrolled</span>
+    </div>`;
+    if (!students.length) {
+      el.innerHTML = header + `<p style="text-align:center;padding:32px;color:#9ca3af">No students registered in this group yet.</p>`;
+      return;
+    }
+    el.innerHTML = header + `<table>
+      <thead><tr><th>#</th><th>Full Name</th><th>Student ID</th><th>Telegram</th><th>Actions</th></tr></thead>
+      <tbody id="modal-tbody">
+        ${students.map((s, i) => studentRow(s, i, groupId, enrollment)).join("")}
+      </tbody></table>`;
+  }
+
+  function studentRow(s, i, groupId, enrollment) {
+    return `<tr id="student-row-${s.id}">
+      <td>${i+1}</td>
+      <td><strong>${s.full_name}</strong></td>
+      <td><code>${s.student_id}</code></td>
+      <td>${s.telegram_username ? "@"+s.telegram_username : "—"}</td>
+      <td style="white-space:nowrap">
+        <button class="view-btn" onclick="editStudent(${s.id}, '${s.full_name.replace(/'/g,"\'")}', '${s.student_id}')"
+          style="font-size:0.75rem;padding:3px 8px;margin-right:4px">✏️</button>
+        <button class="view-btn" onclick="deleteStudent(${s.id}, '${s.full_name.replace(/'/g,"\'")}', ${groupId}, ${enrollment})"
+          style="font-size:0.75rem;padding:3px 8px;color:#ef4444;border-color:#fca5a5">🗑</button>
+      </td>
+    </tr>
+    <tr id="student-edit-row-${s.id}" style="display:none;background:#f9fafb">
+      <td colspan="5" style="padding:10px 14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+          <div><label style="font-size:0.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px">Full Name</label>
+            <input id="edit-sname-${s.id}" type="text" value="${s.full_name}"
+              style="width:100%;padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none"/></div>
+          <div><label style="font-size:0.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px">Student ID</label>
+            <input id="edit-sid-${s.id}" type="text" value="${s.student_id}"
+              style="width:100%;padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none"/></div>
+          <div style="display:flex;gap:6px">
+            <button class="view-btn active" onclick="saveStudentEdit(${s.id}, ${groupId}, ${enrollment})" style="font-size:0.78rem">Save</button>
+            <button class="view-btn" onclick="cancelStudentEdit(${s.id})" style="font-size:0.78rem">Cancel</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  function editStudent(id) { document.getElementById("student-edit-row-"+id).style.display = "table-row"; }
+  function cancelStudentEdit(id) { document.getElementById("student-edit-row-"+id).style.display = "none"; }
+
+  async function saveStudentEdit(id, groupId, enrollment) {
+    const name = document.getElementById("edit-sname-"+id).value.trim();
+    const sid  = document.getElementById("edit-sid-"+id).value.trim();
+    try {
+      const res = await fetch(
+        `/api/admin/students/${id}?full_name=${encodeURIComponent(name)}&student_id=${encodeURIComponent(sid)}&secret=${encodeURIComponent(adminSecret)}`,
+        { method: "PATCH" }
+      );
+      if (res.ok) viewGroupStudents(groupId, document.getElementById("modal-group-title").textContent.replace("👥 ","").replace(/ — Students$/,""), enrollment);
+      else alert("Error saving.");
+    } catch(e) { alert("Server error."); }
+  }
+
+  async function deleteStudent(id, name, groupId, enrollment) {
+    if (!confirm(`Remove "${name}" from the system? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/students/${id}?secret=${encodeURIComponent(adminSecret)}`, { method: "DELETE" });
+      if (res.ok) viewGroupStudents(groupId, document.getElementById("modal-group-title").textContent.replace("👥 ","").replace(/ — Students$/,""), enrollment);
+    } catch(e) { alert("Server error."); }
+  }
+
+  function closeGroupModal() { document.getElementById("group-modal").style.display = "none"; }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeGroupModal(); });
+</script>
+</body>
+</html>
