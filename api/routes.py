@@ -27,8 +27,19 @@ def _now_utc() -> datetime:
 
 
 def _check_secret(secret: str):
-    if secret != config.PROFESSOR_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid secret.")
+    """Accept either the shared PROFESSOR_SECRET or any valid professor account password."""
+    if secret == config.PROFESSOR_SECRET:
+        return
+    # Also accept if it matches any active professor account password
+    import hashlib
+    hashed = hashlib.sha256(secret.encode()).hexdigest()
+    prof = None
+    with db.get_conn() as conn:
+        prof = conn.execute(
+            "SELECT id FROM professors WHERE password_hash = ? AND is_active = 1", (hashed,)
+        ).fetchone()
+    if not prof:
+        raise HTTPException(status_code=403, detail="Invalid secret or server error.")
 
 
 def _check_admin_secret(secret: str):
