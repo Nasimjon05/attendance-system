@@ -233,12 +233,12 @@ async def receive_full_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     _reg_cache[user.id]["full_name"] = full_name
 
-    # Fetch available groups
+    # Fetch available groups directly from DB (no HTTP needed)
     try:
-        import httpx
-        res = httpx.get(f"{config.BASE_URL}/api/groups", timeout=5)
-        groups = res.json() if res.status_code == 200 else []
-    except Exception:
+        raw = db.get_all_groups()
+        groups = [{"id": g["id"], "name": g["name"], "enrollment": g["enrollment"]} for g in raw]
+    except Exception as e:
+        print(f"[BOT] Error fetching groups: {e}")
         groups = []
 
     if not groups:
