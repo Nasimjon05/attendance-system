@@ -30,16 +30,27 @@ def _check_secret(secret: str):
     """Accept either the shared PROFESSOR_SECRET or any valid professor account password."""
     if secret == config.PROFESSOR_SECRET:
         return
-    # Also accept if it matches any active professor account password
     import hashlib
     hashed = hashlib.sha256(secret.encode()).hexdigest()
-    prof = None
     with db.get_conn() as conn:
         prof = conn.execute(
             "SELECT id FROM professors WHERE password_hash = ? AND is_active = 1", (hashed,)
         ).fetchone()
     if not prof:
         raise HTTPException(status_code=403, detail="Invalid secret or server error.")
+
+
+def _get_professor_id(secret: str) -> int | None:
+    """Return professor_id if secret matches a professor account, else None (shared secret)."""
+    if secret == config.PROFESSOR_SECRET:
+        return None  # shared secret — no professor filter
+    import hashlib
+    hashed = hashlib.sha256(secret.encode()).hexdigest()
+    with db.get_conn() as conn:
+        prof = conn.execute(
+            "SELECT id FROM professors WHERE password_hash = ? AND is_active = 1", (hashed,)
+        ).fetchone()
+    return prof["id"] if prof else None
 
 
 def _check_admin_secret(secret: str):
@@ -201,7 +212,8 @@ def search_students(q: str = Query(..., min_length=1), secret: str = Query(...))
 @router.get("/sessions", response_model=list[SessionSummary])
 def get_all_sessions(secret: str = Query(...)):
     _check_secret(secret)
-    sessions = db.get_all_sessions()
+    prof_id = _get_professor_id(secret)
+    sessions = db.get_all_sessions(professor_id=prof_id)
     return [
         SessionSummary(
             session_id=s["id"],
@@ -308,14 +320,16 @@ def health():
 @router.get("/courses")
 def get_courses(secret: str = Query(...)):
     _check_secret(secret)
-    courses = db.get_all_courses()
+    prof_id = _get_professor_id(secret)
+    courses = db.get_all_courses(professor_id=prof_id)
     return [{"course_name": c["course_name"], "group_name": c["group_name"]} for c in courses]
 
 
 @router.get("/courses/{course_name}/summary")
 def get_course_summary(course_name: str, group_name: str = Query(...), secret: str = Query(...), threshold: int = Query(default=80)):
     _check_secret(secret)
-    rows = db.get_course_student_summary(course_name, group_name)
+    prof_id = _get_professor_id(secret)
+    rows = db.get_course_student_summary(course_name, group_name, professor_id=prof_id)
     result = []
     for r in rows:
         result.append({
@@ -339,7 +353,8 @@ def get_course_summary(course_name: str, group_name: str = Query(...), secret: s
 @router.get("/courses/{course_name}/summary/csv")
 def export_course_summary_csv(course_name: str, group_name: str = Query(...), secret: str = Query(...), threshold: int = Query(default=80)):
     _check_secret(secret)
-    rows = db.get_course_student_summary(course_name, group_name)
+    prof_id = _get_professor_id(secret)
+    rows = db.get_course_student_summary(course_name, group_name, professor_id=prof_id)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["#", "Student ID", "Full Name", "Telegram", "Attended", "Total Sessions", "Percentage", "Status"])
@@ -359,17 +374,20 @@ def export_course_summary_csv(course_name: str, group_name: str = Query(...), se
 @router.get("/courses/{course_name}/trend")
 def get_course_trend(course_name: str, group_name: str = Query(...), secret: str = Query(...)):
     _check_secret(secret)
+    prof_id = _get_professor_id(secret)
     from db.database import get_conn
     with get_conn() as conn:
+        prof_filter = "AND s.professor_id = ?" if prof_id else ""
+        params = [course_name, group_name] + ([prof_id] if prof_id else [])
         rows = conn.execute(
-            """SELECT s.id, s.created_at,
+            f"""SELECT s.id, s.created_at,
                       COUNT(a.id) as attended
                FROM sessions s
                LEFT JOIN attendance a ON a.session_id = s.id
-               WHERE s.course_name = ? AND s.group_name = ?
+               WHERE s.course_name = ? AND s.group_name = ? {prof_filter}
                GROUP BY s.id
                ORDER BY s.created_at ASC""",
-            (course_name, group_name)
+            params
         ).fetchall()
     return [
         {

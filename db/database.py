@@ -213,8 +213,20 @@ def get_attendance_for_session(session_id: str):
         ).fetchall()
 
 
-def get_all_sessions():
+def get_all_sessions(professor_id: int = None):
+    """Return sessions. If professor_id given, only return that professor's sessions."""
     with get_conn() as conn:
+        if professor_id:
+            return conn.execute(
+                """SELECT s.id, s.course_name, s.group_name, s.professor_name, s.created_at, s.expires_at, s.is_active,
+                          COUNT(a.id) as attendance_count
+                   FROM sessions s
+                   LEFT JOIN attendance a ON s.id = a.session_id
+                   WHERE s.professor_id = ?
+                   GROUP BY s.id
+                   ORDER BY s.created_at DESC""",
+                (professor_id,)
+            ).fetchall()
         return conn.execute(
             """SELECT s.id, s.course_name, s.group_name, s.professor_name, s.created_at, s.expires_at, s.is_active,
                       COUNT(a.id) as attendance_count
@@ -248,44 +260,101 @@ def get_student_stats(student_id: str):
         ).fetchall()
 
 
-def get_course_student_summary(course_name: str, group_name: str = ""):
+def get_course_student_summary(course_name: str, group_name: str = "", professor_id: int = None):
     """
-    Returns only students who have attended at least one session of this course+group,
-    plus their attendance % across all sessions of that course.
-    Students never enrolled are excluded entirely.
+    Returns ALL students in the group with their attendance %.
+    Students who never attended show 0% — not hidden.
+    Filters sessions by professor_id if provided.
     """
     with get_conn() as conn:
-        # Total sessions for this course+group
+        # Build session filter
+        if professor_id:
+            session_filter = "AND s.professor_id = ?"
+            params_total = (course_name, group_name, professor_id)
+        else:
+            session_filter = ""
+            params_total = (course_name, group_name)
+
+        # Total sessions for this course+group (by this professor)
         total_sessions_row = conn.execute(
-            "SELECT COUNT(DISTINCT id) as cnt FROM sessions WHERE course_name = ? AND group_name = ?",
-            (course_name, group_name)
+            f"SELECT COUNT(DISTINCT id) as cnt FROM sessions s WHERE s.course_name = ? AND s.group_name = ? {session_filter}",
+            params_total
         ).fetchone()
         total_sessions = total_sessions_row["cnt"] if total_sessions_row else 0
 
         if total_sessions == 0:
             return []
 
-        return conn.execute(
-            """SELECT
-                st.student_id,
-                st.full_name,
-                st.telegram_username,
-                ? as total_sessions,
-                COUNT(DISTINCT a.session_id) as attended,
-                ROUND(COUNT(DISTINCT a.session_id) * 100.0 / ?, 1) as percentage
-               FROM students st
-               INNER JOIN attendance a ON a.student_id = st.student_id
-               INNER JOIN sessions s ON s.id = a.session_id
-                   AND s.course_name = ? AND s.group_name = ?
-               GROUP BY st.student_id
-               ORDER BY percentage ASC""",
-            (total_sessions, total_sessions, course_name, group_name)
-        ).fetchall()
+        # Get group_id for this group name to find all enrolled students
+        group_row = conn.execute(
+            "SELECT id FROM groups WHERE name = ?", (group_name,)
+        ).fetchone()
+
+        if group_row:
+            # Use group membership — includes students with 0 attendance
+            group_id = group_row["id"]
+            if professor_id:
+                params = (total_sessions, total_sessions, course_name, group_name, professor_id, group_id)
+                session_join = "AND s.professor_id = ?"
+            else:
+                params = (total_sessions, total_sessions, course_name, group_name, group_id)
+                session_join = ""
+
+            return conn.execute(
+                f"""SELECT
+                    st.student_id,
+                    st.full_name,
+                    st.telegram_username,
+                    ? as total_sessions,
+                    COUNT(DISTINCT a.session_id) as attended,
+                    ROUND(COUNT(DISTINCT a.session_id) * 100.0 / ?, 1) as percentage
+                   FROM students st
+                   LEFT JOIN attendance a ON a.student_id = st.student_id
+                   LEFT JOIN sessions s ON s.id = a.session_id
+                       AND s.course_name = ? AND s.group_name = ? {session_join}
+                   WHERE st.group_id = ?
+                   GROUP BY st.student_id
+                   ORDER BY percentage ASC, st.full_name ASC""",
+                params
+            ).fetchall()
+        else:
+            # Fallback: no group membership — show only students who attended
+            if professor_id:
+                params2 = (total_sessions, total_sessions, course_name, group_name, professor_id)
+                session_join2 = "AND s.professor_id = ?"
+            else:
+                params2 = (total_sessions, total_sessions, course_name, group_name)
+                session_join2 = ""
+
+            return conn.execute(
+                f"""SELECT
+                    st.student_id,
+                    st.full_name,
+                    st.telegram_username,
+                    ? as total_sessions,
+                    COUNT(DISTINCT a.session_id) as attended,
+                    ROUND(COUNT(DISTINCT a.session_id) * 100.0 / ?, 1) as percentage
+                   FROM students st
+                   INNER JOIN attendance a ON a.student_id = st.student_id
+                   INNER JOIN sessions s ON s.id = a.session_id
+                       AND s.course_name = ? AND s.group_name = ? {session_join2}
+                   GROUP BY st.student_id
+                   ORDER BY percentage ASC""",
+                params2
+            ).fetchall()
 
 
-def get_all_courses():
-    """Returns distinct course + group combinations."""
+def get_all_courses(professor_id: int = None):
+    """Returns distinct course + group combinations, optionally filtered by professor."""
     with get_conn() as conn:
+        if professor_id:
+            return conn.execute(
+                """SELECT DISTINCT course_name, group_name
+                   FROM sessions
+                   WHERE professor_id = ?
+                   ORDER BY course_name ASC, group_name ASC""",
+                (professor_id,)
+            ).fetchall()
         return conn.execute(
             """SELECT DISTINCT course_name, group_name
                FROM sessions
