@@ -377,7 +377,7 @@ def get_course_trend(course_name: str, group_name: str = Query(...), secret: str
     prof_id = _get_professor_id(secret)
     from db.database import get_conn
     with get_conn() as conn:
-        prof_filter = "AND s.professor_id = ?" if prof_id else ""
+        prof_filter = "AND (s.professor_id = ? OR s.professor_id IS NULL)" if prof_id else ""
         params = [course_name, group_name] + ([prof_id] if prof_id else [])
         rows = conn.execute(
             f"""SELECT s.id, s.created_at,

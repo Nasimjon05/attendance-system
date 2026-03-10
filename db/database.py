@@ -222,7 +222,7 @@ def get_all_sessions(professor_id: int = None):
                           COUNT(a.id) as attendance_count
                    FROM sessions s
                    LEFT JOIN attendance a ON s.id = a.session_id
-                   WHERE s.professor_id = ?
+                   WHERE (s.professor_id = ? OR s.professor_id IS NULL)
                    GROUP BY s.id
                    ORDER BY s.created_at DESC""",
                 (professor_id,)
@@ -269,7 +269,7 @@ def get_course_student_summary(course_name: str, group_name: str = "", professor
     with get_conn() as conn:
         # Build session filter
         if professor_id:
-            session_filter = "AND s.professor_id = ?"
+            session_filter = "AND (s.professor_id = ? OR s.professor_id IS NULL)"
             params_total = (course_name, group_name, professor_id)
         else:
             session_filter = ""
@@ -295,7 +295,7 @@ def get_course_student_summary(course_name: str, group_name: str = "", professor
             group_id = group_row["id"]
             if professor_id:
                 params = (total_sessions, total_sessions, course_name, group_name, professor_id, group_id)
-                session_join = "AND s.professor_id = ?"
+                session_join = "AND (s.professor_id = ? OR s.professor_id IS NULL)"
             else:
                 params = (total_sessions, total_sessions, course_name, group_name, group_id)
                 session_join = ""
@@ -321,7 +321,7 @@ def get_course_student_summary(course_name: str, group_name: str = "", professor
             # Fallback: no group membership — show only students who attended
             if professor_id:
                 params2 = (total_sessions, total_sessions, course_name, group_name, professor_id)
-                session_join2 = "AND s.professor_id = ?"
+                session_join2 = "AND (s.professor_id = ? OR s.professor_id IS NULL)"
             else:
                 params2 = (total_sessions, total_sessions, course_name, group_name)
                 session_join2 = ""
@@ -351,7 +351,7 @@ def get_all_courses(professor_id: int = None):
             return conn.execute(
                 """SELECT DISTINCT course_name, group_name
                    FROM sessions
-                   WHERE professor_id = ?
+                   WHERE (professor_id = ? OR professor_id IS NULL)
                    ORDER BY course_name ASC, group_name ASC""",
                 (professor_id,)
             ).fetchall()
